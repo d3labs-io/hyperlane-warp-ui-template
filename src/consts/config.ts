@@ -45,7 +45,7 @@ export const config: Config = Object.freeze({
   registryBranch,
   registryProxyUrl,
   showAddRouteButton: true,
-  showAddChainButton: true,
+  showAddChainButton: false,
   showDisabledTokens: false,
   showTipBox: true,
   version,
