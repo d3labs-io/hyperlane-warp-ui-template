@@ -1,4 +1,5 @@
 export const links = {
+  d3labs: "https://d3labs.io",
   home: 'https://www.hyperlane.xyz',
   explorer: 'https://explorer.hyperlane.xyz',
   discord: 'https://discord.gg/VK9ZUy3aTV',
