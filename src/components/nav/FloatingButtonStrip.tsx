@@ -1,8 +1,6 @@
-import Link from 'next/link';
 
-import { DocsIcon, HistoryIcon, IconButton, PlusIcon, useModal } from '@hyperlane-xyz/widgets';
+import { HistoryIcon, IconButton, PlusIcon, useModal } from '@hyperlane-xyz/widgets';
 import { config } from '../../consts/config';
-import { links } from '../../consts/links';
 import { useStore } from '../../features/store';
 import { AddWarpConfigModal } from '../../features/warpCore/AddWarpConfigModal';
 import { Color } from '../../styles/Color';
