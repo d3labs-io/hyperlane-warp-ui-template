@@ -38,13 +38,7 @@ export function FloatingButtonStrip() {
             <PlusIcon color={Color.primary['500']} height={26} width={26} />
           </IconButton>
         )}
-        <Link
-          href={links.warpDocs}
-          target="_blank"
-          className={`p-0.5 ${styles.roundedCircle} ${styles.link}`}
-        >
-          <DocsIcon color={Color.primary['500']} height={21} width={21} className="p-px" />
-        </Link>
+        {/* Documentation link button removed */}
       </div>
       <AddWarpConfigModal isOpen={isAddWarpConfigOpen} close={closeAddWarpConfig} />
     </>
