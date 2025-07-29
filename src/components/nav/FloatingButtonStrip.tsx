@@ -1,4 +1,3 @@
-
 import { HistoryIcon, IconButton, PlusIcon, useModal } from '@hyperlane-xyz/widgets';
 import { config } from '../../consts/config';
 import { useStore } from '../../features/store';
