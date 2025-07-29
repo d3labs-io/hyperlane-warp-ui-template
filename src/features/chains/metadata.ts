@@ -37,7 +37,7 @@ export async function assembleChainMetadata(
   const filesystemMetadata = result.data as ChainMap<ChainMetadata>;
 
   let registryChainMetadata: ChainMap<ChainMetadata> = {};
-  
+
   if (config.useOnlineRegistry) {
     if (config.registryUrl) {
       logger.debug('Using custom registry chain metadata from:', config.registryUrl);
@@ -65,7 +65,7 @@ export async function assembleChainMetadata(
   } else {
     logger.debug('Skipping registry chain metadata (useOnlineRegistry is false)');
   }
-  
+
   const mergedChainMetadata = mergeChainMetadataMap(registryChainMetadata, filesystemMetadata);
 
   const parsedRpcOverridesResult = tryParseJsonOrYaml(config.rpcOverrides);
