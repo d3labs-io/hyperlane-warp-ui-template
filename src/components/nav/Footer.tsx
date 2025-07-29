@@ -12,6 +12,7 @@ type FooterLink = {
 };
 
 const footerLinks: FooterLink[] = [
+  { title: 'part of Pruv Finance', url: links.pruv, external: true },
   { title: 'by D3 Labs', url: links.d3labs, external: true },
 ];
 
@@ -29,7 +30,14 @@ export function Footer() {
 }
 
 function FooterLogo() {
-  return (<div></div>);
+  return (
+    <div className="flex items-center justify-center">
+      <div className="ml-6 space-y-1 text-lg font-medium sm:text-xl">
+        <div>Unlock the Future of Investment</div>
+        <div>with Pruv</div>
+      </div>
+    </div>
+  );
 }
 
 function FooterNav() {
