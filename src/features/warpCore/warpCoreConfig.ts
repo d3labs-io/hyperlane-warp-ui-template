@@ -13,9 +13,9 @@ export function assembleWarpCoreConfig(storeOverrides: WarpCoreConfig[]): WarpCo
   const tsConfig = validateZodResult(tsResult, 'warp core typescript config');
 
   const filteredRegistryConfigMap = config.loadOnlineRegistry
-    ? (warpRouteWhitelist
-        ? filterToIds(registryWarpRoutes, warpRouteWhitelist)
-        : registryWarpRoutes)
+    ? warpRouteWhitelist
+      ? filterToIds(registryWarpRoutes, warpRouteWhitelist)
+      : registryWarpRoutes
     : {};
   const filteredRegistryConfigValues = Object.values(filteredRegistryConfigMap);
   const filteredRegistryTokens = filteredRegistryConfigValues.map((c) => c.tokens).flat();
