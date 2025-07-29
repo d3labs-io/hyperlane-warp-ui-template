@@ -41,10 +41,10 @@ export async function assembleChainMetadata(
     logger.debug('Online registry disabled, using empty registry metadata');
     registryChainMetadata = {};
   } else if (config.registryUrl) {
-    logger.debug('Using custom registry metadata from:', config.registryUrl);
+    logger.debug('Using custom registry chain metadata from:', config.registryUrl);
     registryChainMetadata = await registry.getMetadata();
   } else {
-    logger.debug('Using default published registry');
+    logger.debug('Using default published registry for chain metadata');
     registryChainMetadata = publishedChainMetadata;
   }
 
