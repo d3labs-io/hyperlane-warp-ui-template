@@ -9,12 +9,13 @@ import {
   soonAddresses,
 } from '@hyperlane-xyz/registry';
 import { ChainMap, ChainMetadata } from '@hyperlane-xyz/sdk';
+import { config } from './config';
 
 // A map of chain names to ChainMetadata
 // Chains can be defined here, in chains.json, or in chains.yaml
 // Chains already in the SDK need not be included here unless you want to override some fields
 // Schema here: https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/main/typescript/sdk/src/metadata/chainMetadataTypes.ts
-export const chains: ChainMap<ChainMetadata & { mailbox?: Address }> = {
+export const chains: ChainMap<ChainMetadata & { mailbox?: Address }> = config.loadOnlineRegistry ? {
   solanamainnet: {
     ...solanamainnet,
     // SVM chains require mailbox addresses for the token adapters
@@ -55,4 +56,7 @@ export const chains: ChainMap<ChainMetadata & { mailbox?: Address }> = {
   //   },
   //   logoURI: '/logo.svg',
   // },
+} : {
+  // When loadOnlineRegistry is false, use empty chains object
+  // Add your custom chains here if needed
 };
