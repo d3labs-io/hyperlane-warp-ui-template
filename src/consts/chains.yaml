@@ -53,6 +53,8 @@ arbitrumsepolia:
   domainId: 421614
   logoURI: /images/chains/arbitrumsepolia/logo.svg
   gasCurrencyCoinGeckoId: ethereum
+  index:
+    from: 49690504 # Index of Mailbox deployment, nitro specific
   isTestnet: true
   name: arbitrumsepolia
   nativeToken:
