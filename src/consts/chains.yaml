@@ -18,3 +18,34 @@
 #   protocol: ethereum
 #   rpcUrls:
 #     - http: http://127.0.0.1:8555
+polygon:
+  blockExplorers:
+    - apiKey: GP69JEAP2W7YFJT9ZJTEPGQT6Y6KMW44ZN
+      apiUrl: https://api.etherscan.io/v2/api?chainid=137
+      family: etherscan
+      name: PolygonScan
+      url: https://polygonscan.com
+  blocks:
+    confirmations: 3
+    estimateBlockTime: 2
+    reorgPeriod: finalized
+  chainId: 137
+  deployer:
+    name: Abacus Works
+    url: https://www.hyperlane.xyz
+  displayName: Polygon
+  domainId: 137
+  gasCurrencyCoinGeckoId: polygon-ecosystem-token
+  gnosisSafeTransactionServiceUrl: https://safe-transaction-polygon.safe.global/
+  name: polygon
+  nativeToken:
+    decimals: 18
+    name: Polygon Ecosystem Token
+    symbol: POL
+  protocol: ethereum
+  rpcUrls:
+    - http: https://polygon-bor.publicnode.com
+    - http: https://polygon-rpc.com
+    - http: https://polygon.drpc.org
+    - http: https://polygon-pokt.nodies.app
+  technicalStack: other
