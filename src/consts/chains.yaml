@@ -37,6 +37,7 @@ polygon:
   domainId: 137
   gasCurrencyCoinGeckoId: polygon-ecosystem-token
   gnosisSafeTransactionServiceUrl: https://safe-transaction-polygon.safe.global/
+  logoURI: /images/chains/polygon/logo.svg
   name: polygon
   nativeToken:
     decimals: 18
@@ -77,6 +78,7 @@ ethereum:
   domainId: 1
   gasCurrencyCoinGeckoId: ethereum
   gnosisSafeTransactionServiceUrl: https://safe-transaction-mainnet.safe.global/
+  logoURI: /images/chains/ethereum/logo.svg
   name: ethereum
   nativeToken:
     decimals: 18
