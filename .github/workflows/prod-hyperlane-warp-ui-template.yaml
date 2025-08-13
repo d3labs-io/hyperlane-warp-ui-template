@@ -1,4 +1,4 @@
-name: Deploy hyperlane-warp-ui-template-alpha
+name: Deploy prod-hyperlane-warp-ui-template
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
       - main
 
 env:
-  PROJECT_ID: "sto-dev-452608"
-  SERVICE_ACCOUNT: "stg-hyperlane-warp@sto-dev-452608.iam.gserviceaccount.com"
-  WORKLOAD_IDENTITY_PROVIDER: "projects/164899678221/locations/global/workloadIdentityPools/sto-dev-452608/providers/hyperlane-warp-gha-prvdr"
+  PROJECT_ID: "sto-prod-461714"
+  SERVICE_ACCOUNT: "prod-hyperlane-warp@sto-prod-461714.iam.gserviceaccount.com"
+  WORKLOAD_IDENTITY_PROVIDER: "projects/101395147265/locations/global/workloadIdentityPools/sto-prod-461714/providers/hyperlane-warp-gha-prvdr"
   AR_REPO_LOCATION: "asia-southeast2"
-  AR_URL: "asia-southeast2-docker.pkg.dev/sto-dev-452608/bridge"
+  AR_URL: "asia-southeast2-docker.pkg.dev/sto-prod-461714/bridge"
 
 jobs:
-  deploy-hyperlane-warp-alpha:
+  deploy-prod-hyperlane-warp:
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -46,7 +46,7 @@ jobs:
         run: |
           echo "Fetching secrets from GCP..."
           gcloud secrets versions access latest \
-            --secret=seaseed-bridge-stg-hyperlane-warp \
+            --secret=seaseed-bridge-prod-hyperlane-warp \
             --format='get(payload.data)' \
             | tr '_-' '/+' | base64 -d > secret.json
 
@@ -87,7 +87,7 @@ jobs:
       - name: Update image tag
         run: |
           echo "Updating Helm chart image tag to ${GIT_HASH}..."
-          sed -i "s|tag: \".*\"|tag: \"${GIT_HASH}\"|g" argo-apps/accounts/sto-staging/hyperlane-warp/values.yaml
+          sed -i "s|tag: \".*\"|tag: \"${GIT_HASH}\"|g" argo-apps/accounts/sto-prod-pruv-finance/hyperlane-warp/values.yaml
 
       # Commit and push to repo chart
       - name: Commit and push changes
@@ -95,6 +95,6 @@ jobs:
           cd argo-apps
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add accounts/sto-staging/hyperlane-warp/values.yaml
+          git add accounts/sto-prod-pruv-finance/hyperlane-warp/values.yaml
           git commit -m "chore: update image tag to ${GIT_HASH}" || echo "No changes to commit"
           git push origin main
