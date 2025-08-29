@@ -64,12 +64,12 @@ export const config: Config = Object.freeze({
   shouldDisableChains: false,
   rpcOverrides,
   gaslessChains: ['pruvtest'],
-  routerUSDCFee:{
-    "USDC":{
-      "pruvtest":{
-        "sepolia": 0.75,
-        "arbitrumsepolia": 0.1
-      }
-    }
-  }
+  routerUSDCFee: {
+    USDC: {
+      pruvtest: {
+        sepolia: 0.75,
+        arbitrumsepolia: 0.1,
+      },
+    },
+  },
 });
