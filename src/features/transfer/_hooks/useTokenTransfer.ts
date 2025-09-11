@@ -13,14 +13,14 @@ import {
 } from '@hyperlane-xyz/widgets';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
-import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
-import { logger } from '../../utils/logger';
-import { useMultiProvider } from '../chains/hooks';
-import { getChainDisplayName } from '../chains/utils';
-import { AppState, useStore } from '../store';
-import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
-import { TransferContext, TransferFormValues, TransferStatus } from './types';
-import { tryGetMsgIdFromTransferReceipt } from './utils';
+import { toastTxSuccess } from '../../../components/toast/TxSuccessToast';
+import { logger } from '../../../utils/logger';
+import { useMultiProvider } from '../../chains/hooks';
+import { getChainDisplayName } from '../../chains/utils';
+import { AppState, useStore } from '../../store';
+import { getTokenByIndex, useWarpCore } from '../../tokens/hooks';
+import { TransferContext, TransferFormValues, TransferStatus } from '../types';
+import { tryGetMsgIdFromTransferReceipt } from '../utils';
 
 const CHAIN_MISMATCH_ERROR = 'ChainMismatchError';
 const TRANSFER_TIMEOUT_ERROR1 = 'block height exceeded';
