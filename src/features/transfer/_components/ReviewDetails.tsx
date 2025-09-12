@@ -93,6 +93,7 @@ export default function ReviewDetails({
                   {originToken?.collateralAddressOrDenom && (
                     <p>{`Collateral Address: ${originToken.collateralAddressOrDenom}`}</p>
                   )}
+                  <p>Amount Fee: {`${config.pruvOriginFeeUSDC[values.destination]} USDC`}</p>
                 </div>
               </div>
             )}

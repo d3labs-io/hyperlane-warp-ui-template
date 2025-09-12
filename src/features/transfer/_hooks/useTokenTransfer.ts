@@ -17,6 +17,7 @@ import {
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
 import { toastTxSuccess } from '../../../components/toast/TxSuccessToast';
+import { config } from '../../../consts/config';
 import { logger } from '../../../utils/logger';
 import { useMultiProvider } from '../../chains/hooks';
 import { getChainDisplayName } from '../../chains/utils';
@@ -111,9 +112,6 @@ async function executeTransfer({
   const { origin, destination, tokenIndex, amount, recipient, feeTokenIndex } = values;
   const multiProvider = warpCore.multiProvider;
 
-  console.log(feeTokenIndex, 'feeTokenIndex');
-  console.log(tokenIndex, 'tokenIndex');
-
   try {
     const originToken = getTokenByIndex(warpCore, tokenIndex);
     const connection = originToken?.getConnectionForChain(destination);
@@ -160,20 +158,18 @@ async function executeTransfer({
       recipient,
     });
 
-    console.log(originTokenAmount, 'originorigin');
-
     if (feeTokenIndex !== undefined && feeTokenIndex > -1 && origin.startsWith('pruv')) {
-      // const _token = originTokenAmount.token;
       const _token1 = getTokenByIndex(warpCore, feeTokenIndex);
       if (!_token1) return;
       const _token = _token1.amount(weiAmountOrId).token;
       const destinationName = warpCore.multiProvider.getChainName(destination);
       const providerType = TOKEN_STANDARD_TO_PROVIDER_TYPE[_token.standard];
-      console.log(destinationName, 'destinationName');
       const hypAdapter = _token.getAdapter(warpCore.multiProvider);
-      console.log(hypAdapter, 'hypeAdapter');
       const approveTxReq = await hypAdapter.populateApproveTx({
-        weiAmountOrId: 1,
+        weiAmountOrId: toWei(
+          config.pruvOriginFeeUSDC[destinationName]!.toString(),
+          _token.decimals,
+        ),
         recipient: originToken.addressOrDenom,
       });
       const approveTx: WarpTypedTransaction = {
