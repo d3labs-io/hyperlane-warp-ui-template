@@ -18,13 +18,14 @@ export default function ReviewDetails({
   routeOverrideToken: Token | null;
 }) {
   const { values } = useFormikContext<TransferFormValues>();
-  const { amount, destination, tokenIndex } = values;
+  const { amount, destination, tokenIndex, feeTokenIndex } = values;
   const warpCore = useWarpCore();
   const originToken = routeOverrideToken || getTokenByIndex(warpCore, tokenIndex);
   const originTokenSymbol = originToken?.symbol || '';
   const connection = originToken?.getConnectionForChain(destination);
   const destinationToken = connection?.token;
   const isNft = originToken?.isNft();
+  const isFeeTokenIndexAvailable = feeTokenIndex !== undefined && feeTokenIndex > -1;
 
   const scaledAmount = useMemo(() => {
     if (!originToken?.scale || !destinationToken?.scale) return null;
@@ -84,9 +85,20 @@ export default function ReviewDetails({
           </div>
         ) : (
           <>
-            {isApproveRequired && (
+            {isFeeTokenIndexAvailable && (
               <div>
                 <h4>Transaction 1: Approve Transfer</h4>
+                <div className="ml-1.5 mt-1.5 space-y-1.5 border-l border-gray-300 pl-2 text-xs">
+                  <p>{`Router Address: ${originToken?.feeAddressOrDenom}`}</p>
+                  {originToken?.collateralAddressOrDenom && (
+                    <p>{`Collateral Address: ${originToken.collateralAddressOrDenom}`}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {isApproveRequired && (
+              <div>
+                <h4>Transaction {isFeeTokenIndexAvailable ? 2 : 1}: Approve Transfer</h4>
                 <div className="ml-1.5 mt-1.5 space-y-1.5 border-l border-gray-300 pl-2 text-xs">
                   <p>{`Router Address: ${originToken?.addressOrDenom}`}</p>
                   {originToken?.collateralAddressOrDenom && (
@@ -96,7 +108,7 @@ export default function ReviewDetails({
               </div>
             )}
             <div>
-              <h4>{`Transaction${isApproveRequired ? ' 2' : ''}: Transfer Remote`}</h4>
+              <h4>{`Transaction${isApproveRequired ? (isFeeTokenIndexAvailable ? ' 3' : ' 2') : ''}: Transfer Remote`}</h4>
               <div className="ml-1.5 mt-1.5 space-y-1.5 border-l border-gray-300 pl-2 text-xs">
                 {destinationToken?.addressOrDenom && (
                   <p className="flex">

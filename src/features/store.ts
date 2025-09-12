@@ -3,7 +3,10 @@ import {
   ChainMap,
   ChainMetadata,
   ChainName,
+  IToken,
   MultiProtocolProvider,
+  parseTokenConnectionId,
+  Token,
   WarpCore,
   WarpCoreConfig,
 } from '@hyperlane-xyz/sdk';
@@ -203,6 +206,36 @@ export const useStore = create<AppState>()(
   ),
 );
 
+function createWarpCoreFromConfig(multiProvider, config: WarpCoreConfig) {
+  // Validate and parse config data
+
+  // Instantiate all tokens
+  const tokens = config.tokens.map(
+    (t) =>
+      new Token({
+        ...t,
+        addressOrDenom: t.addressOrDenom || '',
+        connections: undefined,
+      }),
+  );
+  // Connect tokens together
+  config.tokens.forEach((config, i) => {
+    for (const connection of config.connections || []) {
+      const token1 = tokens[i];
+      const { chainName, addressOrDenom } = parseTokenConnectionId(connection.token);
+      const token2 = tokens.find(
+        (t) => t.chainName === chainName && t.addressOrDenom === addressOrDenom,
+      );
+      token1.addConnection({
+        ...connection,
+        token: token2 as IToken,
+      });
+    }
+  });
+  // Create new Warp
+  return new WarpCore(multiProvider, tokens, config.options);
+}
+
 async function initWarpContext({
   registry,
   chainMetadataOverrides,
@@ -226,7 +259,7 @@ async function initWarpContext({
       chainMetadataOverrides,
     );
     const multiProvider = new MultiProtocolProvider(chainMetadataWithOverrides);
-    const warpCore = WarpCore.FromConfig(multiProvider, coreConfig);
+    const warpCore = createWarpCoreFromConfig(multiProvider, coreConfig);
 
     const tokensBySymbolChainMap = assembleTokensBySymbolChainMap(warpCore.tokens, multiProvider);
     const routerAddressesByChainMap = getRouterAddressesByChain(coreConfig.tokens);

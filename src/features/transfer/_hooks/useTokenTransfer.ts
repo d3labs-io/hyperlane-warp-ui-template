@@ -1,8 +1,11 @@
 import {
+  EthersV5Transaction,
   ProviderType,
+  TOKEN_STANDARD_TO_PROVIDER_TYPE,
   TypedTransactionReceipt,
   WarpCore,
   WarpTxCategory,
+  WarpTypedTransaction,
 } from '@hyperlane-xyz/sdk';
 import { toTitleCase, toWei } from '@hyperlane-xyz/utils';
 import {
@@ -105,8 +108,11 @@ async function executeTransfer({
   let transferStatus: TransferStatus = TransferStatus.Preparing;
   updateTransferStatus(transferIndex, transferStatus);
 
-  const { origin, destination, tokenIndex, amount, recipient } = values;
+  const { origin, destination, tokenIndex, amount, recipient, feeTokenIndex } = values;
   const multiProvider = warpCore.multiProvider;
+
+  console.log(feeTokenIndex, 'feeTokenIndex');
+  console.log(tokenIndex, 'tokenIndex');
 
   try {
     const originToken = getTokenByIndex(warpCore, tokenIndex);
@@ -147,12 +153,38 @@ async function executeTransfer({
 
     updateTransferStatus(transferIndex, (transferStatus = TransferStatus.CreatingTxs));
 
-    const txs = await warpCore.getTransferRemoteTxs({
+    let txs = await warpCore.getTransferRemoteTxs({
       originTokenAmount,
       destination,
       sender,
       recipient,
     });
+
+    console.log(originTokenAmount, 'originorigin');
+
+    if (feeTokenIndex !== undefined && feeTokenIndex > -1 && origin.startsWith('pruv')) {
+      // const _token = originTokenAmount.token;
+      const _token1 = getTokenByIndex(warpCore, feeTokenIndex);
+      if (!_token1) return;
+      const _token = _token1.amount(weiAmountOrId).token;
+      const destinationName = warpCore.multiProvider.getChainName(destination);
+      const providerType = TOKEN_STANDARD_TO_PROVIDER_TYPE[_token.standard];
+      console.log(destinationName, 'destinationName');
+      const hypAdapter = _token.getAdapter(warpCore.multiProvider);
+      console.log(hypAdapter, 'hypeAdapter');
+      const approveTxReq = await hypAdapter.populateApproveTx({
+        weiAmountOrId: 1,
+        recipient: originToken.addressOrDenom,
+      });
+      const approveTx: WarpTypedTransaction = {
+        category: WarpTxCategory.Approval,
+        type: providerType as EthersV5Transaction['type'],
+        transaction: approveTxReq as EthersV5Transaction['transaction'],
+      };
+
+      const _oldTxs = txs;
+      txs = [approveTx, ..._oldTxs];
+    }
 
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;

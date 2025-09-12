@@ -10,7 +10,13 @@ import { WARP_QUERY_PARAMS } from '../../consts/args';
 import { updateQueryParam, updateQueryParams } from '../../utils/queryParams';
 import { TransferFormValues } from '../transfer/types';
 import { TokenListModal } from './TokenListModal';
-import { getIndexForToken, getTokenByIndex, getTokenIndexFromChains, useWarpCore } from './hooks';
+import {
+  getIndexForToken,
+  getTokenByIndex,
+  getTokenIndexFromChains,
+  tryFindToken,
+  useWarpCore,
+} from './hooks';
 
 type Props = {
   name: string;
@@ -21,6 +27,7 @@ type Props = {
 export function TokenSelectField({ name, disabled, setIsNft }: Props) {
   const { values, setValues } = useFormikContext<TransferFormValues>();
   const [field, , helpers] = useField<number | undefined>(name);
+  const [, , feeTokenHelper] = useField<number | undefined>('feeTokenIndex');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAutomaticSelection, setIsAutomaticSelection] = useState(false);
 
@@ -35,6 +42,9 @@ export function TokenSelectField({ name, disabled, setIsNft }: Props) {
   const onSelectToken = (newToken: IToken) => {
     // Set the token address value in formik state
     helpers.setValue(getIndexForToken(warpCore, newToken));
+    const _feeToken = tryFindToken(warpCore, newToken.chainName, newToken.feeAddressOrDenom);
+    feeTokenHelper.setValue(getIndexForToken(warpCore, _feeToken || undefined));
+    updateQueryParam(WARP_QUERY_PARAMS.FEE_TOKEN, newToken?.feeAddressOrDenom);
     updateQueryParam(WARP_QUERY_PARAMS.TOKEN, newToken.addressOrDenom);
     // Update nft state in parent
     setIsNft(newToken.isNft());

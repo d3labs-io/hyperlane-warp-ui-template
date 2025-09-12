@@ -4,6 +4,7 @@ import {
 } from '@hyperlane-xyz/registry';
 import { WarpCoreConfig, WarpCoreConfigSchema, validateZodResult } from '@hyperlane-xyz/sdk';
 import { objFilter, objMerge } from '@hyperlane-xyz/utils';
+import { z } from 'zod';
 import { config } from '../../consts/config.ts';
 import { warpRouteWhitelist } from '../../consts/warpRouteWhitelist.ts';
 import { warpRouteConfigs as tsWarpRoutes } from '../../consts/warpRoutes.ts';
@@ -14,7 +15,15 @@ export async function assembleWarpCoreConfig(
   storeOverrides: WarpCoreConfig[],
   registry: IRegistry,
 ): Promise<WarpCoreConfig> {
-  const yamlResult = WarpCoreConfigSchema.safeParse(yamlWarpRoutes);
+  const _ConfigSchema = WarpCoreConfigSchema.extend({
+    tokens: z.array(
+      WarpCoreConfigSchema.shape.tokens.element.extend({
+        feeAddressOrDenom: z.string().optional(),
+      }),
+    ),
+  });
+
+  const yamlResult = _ConfigSchema.safeParse(yamlWarpRoutes);
   const yamlConfig = validateZodResult(yamlResult, 'warp core yaml config');
   const tsResult = WarpCoreConfigSchema.safeParse(tsWarpRoutes);
   const tsConfig = validateZodResult(tsResult, 'warp core typescript config');

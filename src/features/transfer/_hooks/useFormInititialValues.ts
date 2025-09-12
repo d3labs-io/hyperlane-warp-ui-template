@@ -31,6 +31,18 @@ export default function useFormInitialValues(): TransferFormValues {
     config.defaultDestinationChain,
   );
 
+  const feeTokenIndex =
+    (params.get(WARP_QUERY_PARAMS.FEE_TOKEN) &&
+      getInitialTokenIndex(
+        warpCore,
+        params.get(WARP_QUERY_PARAMS.FEE_TOKEN),
+        originQuery,
+        destinationQuery,
+        defaultOriginToken,
+        config.defaultDestinationChain,
+      )) ||
+    undefined;
+
   return useMemo(() => {
     const firstToken = defaultOriginToken || warpCore.tokens[0];
     const connectedToken = firstToken.connections?.[0];
@@ -42,8 +54,9 @@ export default function useFormInitialValues(): TransferFormValues {
         ? destinationQuery
         : config.defaultDestinationChain || connectedToken?.token?.chainName || '',
       tokenIndex: tokenIndex,
+      feeTokenIndex: feeTokenIndex,
       amount: '',
       recipient: '',
     };
-  }, [warpCore, destinationQuery, originQuery, tokenIndex, defaultOriginToken]);
+  }, [warpCore, destinationQuery, originQuery, tokenIndex, defaultOriginToken, feeTokenIndex]);
 }

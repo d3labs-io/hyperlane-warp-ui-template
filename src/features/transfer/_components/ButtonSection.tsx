@@ -4,6 +4,7 @@ import { useFormikContext } from 'formik';
 import { ConnectAwareSubmitButton } from '../../../components/buttons/ConnectAwareSubmitButton';
 import { SolidButton } from '../../../components/buttons/SolidButton';
 import { Color } from '../../../styles/Color';
+import { logger } from '../../../utils/logger';
 import { useChainDisplayName } from '../../chains/hooks';
 import { useIsAccountSanctioned } from '../../sanctions/hooks/useIsAccountSanctioned';
 import { useStore } from '../../store';
@@ -44,19 +45,24 @@ export default function ButtonSection({
   }));
 
   const triggerTransactionsHandler = async () => {
-    if (isSanctioned) {
-      return;
-    }
-    setIsReview(false);
-    setTransferLoading(true);
-    let tokenIndex = values.tokenIndex;
-    let origin = values.origin;
+    try {
+      if (isSanctioned) {
+        return;
+      }
+      setIsReview(false);
+      setTransferLoading(true);
+      let tokenIndex = values.tokenIndex;
+      let origin = values.origin;
 
-    if (routeOverrideToken) {
-      tokenIndex = getIndexForToken(warpCore, routeOverrideToken);
-      origin = routeOverrideToken.chainName;
+      if (routeOverrideToken) {
+        tokenIndex = getIndexForToken(warpCore, routeOverrideToken);
+        origin = routeOverrideToken.chainName;
+      }
+      await triggerTransactions({ ...values, tokenIndex, origin });
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Transaction Error', err?.message);
     }
-    await triggerTransactions({ ...values, tokenIndex, origin });
   };
 
   const onEdit = () => {
