@@ -1,8 +1,11 @@
 import {
+  EthersV5Transaction,
   ProviderType,
+  TOKEN_STANDARD_TO_PROVIDER_TYPE,
   TypedTransactionReceipt,
   WarpCore,
   WarpTxCategory,
+  WarpTypedTransaction,
 } from '@hyperlane-xyz/sdk';
 import { toTitleCase, toWei } from '@hyperlane-xyz/utils';
 import {
@@ -13,14 +16,15 @@ import {
 } from '@hyperlane-xyz/widgets';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
-import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
-import { logger } from '../../utils/logger';
-import { useMultiProvider } from '../chains/hooks';
-import { getChainDisplayName } from '../chains/utils';
-import { AppState, useStore } from '../store';
-import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
-import { TransferContext, TransferFormValues, TransferStatus } from './types';
-import { tryGetMsgIdFromTransferReceipt } from './utils';
+import { toastTxSuccess } from '../../../components/toast/TxSuccessToast';
+import { config } from '../../../consts/config';
+import { logger } from '../../../utils/logger';
+import { useMultiProvider } from '../../chains/hooks';
+import { getChainDisplayName } from '../../chains/utils';
+import { AppState, useStore } from '../../store';
+import { getTokenByIndex, useWarpCore } from '../../tokens/hooks';
+import { TransferContext, TransferFormValues, TransferStatus } from '../types';
+import { tryGetMsgIdFromTransferReceipt } from '../utils';
 
 const CHAIN_MISMATCH_ERROR = 'ChainMismatchError';
 const TRANSFER_TIMEOUT_ERROR1 = 'block height exceeded';
@@ -105,7 +109,7 @@ async function executeTransfer({
   let transferStatus: TransferStatus = TransferStatus.Preparing;
   updateTransferStatus(transferIndex, transferStatus);
 
-  const { origin, destination, tokenIndex, amount, recipient } = values;
+  const { origin, destination, tokenIndex, amount, recipient, feeTokenIndex } = values;
   const multiProvider = warpCore.multiProvider;
 
   try {
@@ -147,12 +151,36 @@ async function executeTransfer({
 
     updateTransferStatus(transferIndex, (transferStatus = TransferStatus.CreatingTxs));
 
-    const txs = await warpCore.getTransferRemoteTxs({
+    let txs = await warpCore.getTransferRemoteTxs({
       originTokenAmount,
       destination,
       sender,
       recipient,
     });
+
+    if (feeTokenIndex !== undefined && feeTokenIndex > -1 && origin.startsWith('pruv')) {
+      const _token1 = getTokenByIndex(warpCore, feeTokenIndex);
+      if (!_token1) return;
+      const _token = _token1.amount(weiAmountOrId).token;
+      const destinationName = warpCore.multiProvider.getChainName(destination);
+      const providerType = TOKEN_STANDARD_TO_PROVIDER_TYPE[_token.standard];
+      const hypAdapter = _token.getAdapter(warpCore.multiProvider);
+      const approveTxReq = await hypAdapter.populateApproveTx({
+        weiAmountOrId: toWei(
+          config.pruvOriginFeeUSDC[destinationName]!.toString(),
+          _token.decimals,
+        ),
+        recipient: originToken.addressOrDenom,
+      });
+      const approveTx: WarpTypedTransaction = {
+        category: WarpTxCategory.Approval,
+        type: providerType as EthersV5Transaction['type'],
+        transaction: approveTxReq as EthersV5Transaction['transaction'],
+      };
+
+      const _oldTxs = txs;
+      txs = [approveTx, ..._oldTxs];
+    }
 
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;

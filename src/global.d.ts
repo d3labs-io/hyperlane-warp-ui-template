@@ -1,9 +1,21 @@
-declare type Address = string;
-declare type ChainName = string;
-declare type ChainId = number | string;
-declare type DomainId = number;
+import '@hyperlane-xyz/sdk';
 
-declare module '*.yaml' {
-  const data: any;
-  export default data;
+declare global {
+  type Address = string;
+  type ChainName = string;
+  type ChainId = number | string;
+  type DomainId = number;
+  module '*.yaml' {
+    const data: any;
+    export default data;
+  }
+}
+
+declare module '@hyperlane-xyz/sdk' {
+  interface IToken {
+    feeAddressOrDenom: string;
+  }
+  interface Token {
+    feeAddressOrDenom: string;
+  }
 }

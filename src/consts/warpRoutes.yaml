@@ -47,6 +47,7 @@ tokens:
     name: FreeERC20
     addressOrDenom: '0x317da564C81f23f01dFdFfB6ff97596D00556d83'
     collateralAddressOrDenom: '0x3909c14120016b027A91B2E3AFA0c73F48695ac7'
+    feeAddressOrDenom: '0x1D12DCE1A9AA37A3f47bFD8acabd922682B747b4'
     connections:
       - token: ethereum|arbitrumsepolia|0x5b50DC5945b95B3e5e1d25e55272390F9Ffb12B4
       - token: ethereum|sepolia|0xd654FBc40d57775D9287d11023CD9302ab8EFC53
