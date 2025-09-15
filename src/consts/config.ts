@@ -36,6 +36,7 @@ interface Config {
   gaslessChains: string[] | undefined;
   enablePruvOriginFeeUSDC: boolean;
   pruvOriginFeeUSDC: Record<string, number>; // Bridge fee for transaction originating from pruv
+  pruvUSDCAddress: string; // USDC address on pruvtest
 }
 
 export const config: Config = Object.freeze({
@@ -70,4 +71,5 @@ export const config: Config = Object.freeze({
     sepolia: 0.75,
     arbitrumsepolia: 0.1,
   },
+  pruvUSDCAddress: '0xeCacC484026a02022565496E088CA0581cC36373',
 });

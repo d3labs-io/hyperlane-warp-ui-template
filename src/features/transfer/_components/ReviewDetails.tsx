@@ -89,10 +89,8 @@ export default function ReviewDetails({
               <div>
                 <h4>Transaction 1: Approve Transfer</h4>
                 <div className="ml-1.5 mt-1.5 space-y-1.5 border-l border-gray-300 pl-2 text-xs">
-                  <p>{`Router Address: ${originToken?.feeAddressOrDenom}`}</p>
-                  {originToken?.collateralAddressOrDenom && (
-                    <p>{`Collateral Address: ${originToken.collateralAddressOrDenom}`}</p>
-                  )}
+                  <p>{`Router Address: ${originToken?.addressOrDenom}`}</p>
+                  <p>Collateral Address: {config.pruvUSDCAddress}</p>
                   <p>Amount Fee: {`${config.pruvOriginFeeUSDC[values.destination]} USDC`}</p>
                 </div>
               </div>
