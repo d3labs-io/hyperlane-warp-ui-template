@@ -166,13 +166,16 @@ async function executeTransfer({
       const usdcAmount = bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals);
       const amountHex = usdcAmount.toString(16); // Convert to hex
       
+      // Remove '0x' prefix from originToken address if present and pad to 64 chars
+      const spenderAddress = originToken.addressOrDenom.replace('0x', '').padStart(64, '0');
+      
       const customApprovalTx = {
         category: WarpTxCategory.Approval,
         type: originProviderType,
         transaction: {
           to: config.pruvUSDCMetadata.address, // USDC contract address from config
           data: '0x095ea7b3' + // approve(address,uint256) function selector
-                '0008188BFf405025BaA02b09c7524e73E3A16B15924'.padStart(64, '0') + // spender address
+                spenderAddress + // spender address from originToken
                 amountHex.padStart(64, '0'), // amount in hex based on destination bridge fee
           value: '0x0',
         },
