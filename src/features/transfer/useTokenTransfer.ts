@@ -14,6 +14,7 @@ import {
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
 import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
+import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
 import { getChainDisplayName } from '../chains/utils';
@@ -153,6 +154,33 @@ async function executeTransfer({
       sender,
       recipient,
     });
+
+    // Add custom approval transaction for 'pruvtest' origin chain
+    if (origin.startsWith('pruv')) {
+      const originProviderType = multiProvider.getProvider(origin).type;
+      
+      // Get the bridge fee for the destination chain from config
+      const bridgeFeeUSDC = config.pruvOriginFeeUSDC[destination] || 0;
+      
+      // Calculate amount with USDC decimals: bridgeFee * 10^decimals
+      const usdcAmount = bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals);
+      const amountHex = usdcAmount.toString(16); // Convert to hex
+      
+      const customApprovalTx = {
+        category: WarpTxCategory.Approval,
+        type: originProviderType,
+        transaction: {
+          to: config.pruvUSDCMetadata.address, // USDC contract address from config
+          data: '0x095ea7b3' + // approve(address,uint256) function selector
+                '0008188BFf405025BaA02b09c7524e73E3A16B15924'.padStart(64, '0') + // spender address
+                amountHex.padStart(64, '0'), // amount in hex based on destination bridge fee
+          value: '0x0',
+        },
+      } as any; // Type assertion to bypass TypeScript strict checking
+
+      // Insert the custom approval transaction at the beginning
+      txs.unshift(customApprovalTx);
+    }
 
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;
