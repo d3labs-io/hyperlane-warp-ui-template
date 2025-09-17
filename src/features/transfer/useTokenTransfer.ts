@@ -156,8 +156,8 @@ async function executeTransfer({
       recipient,
     });
 
-    // Add custom approval transaction for 'pruv' origin chain
-    if (origin.startsWith('pruv') && originToken.symbol !== 'USDC') {
+    // Add extra USDC approval transaction if origin is pruv and token is not USDC
+    if (config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && originToken.symbol !== 'USDC') {
       const originProviderType = multiProvider.getProvider(origin).type;
 
       // Get the bridge fee for the destination chain from config
