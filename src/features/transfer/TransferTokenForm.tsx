@@ -530,9 +530,14 @@ function ReviewDetails({
   const isLoading = isApproveLoading || isQuoteLoading;
 
   // Check if we need to show custom approval for pruvtest
-  const needAdditionalUSDCApproval =
-    values.origin.startsWith('pruv') && originTokenSymbol !== 'USDC';
+  const isBridgeFeeUSDC = config.enablePruvOriginFeeUSDC && values.origin.startsWith('pruv');
+
+  const needAdditionalUSDCApproval = isBridgeFeeUSDC && originTokenSymbol !== 'USDC';
   const totalApprovals = (isApproveRequired ? 1 : 0) + (needAdditionalUSDCApproval ? 1 : 0);
+  const receivedAmount =
+    isBridgeFeeUSDC && originToken?.symbol === 'USDC'
+      ? (parseFloat(amount) - config.pruvOriginFeeUSDC[values.destination]).toFixed(2)
+      : amount; // if token is USDC, take bridge fee from amount
 
   const interchainQuote =
     originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
@@ -609,25 +614,16 @@ function ReviewDetails({
                     }`}</span>
                   </p>
                 )}
-                {config.enablePruvOriginFeeUSDC && values.origin.startsWith('pruv') && (
+                {isBridgeFeeUSDC && (
                   <p className="flex">
                     <span className="min-w-[7.5rem]">Bridge Fee (USDC)</span>
                     <span className="font-bold">{`${config.pruvOriginFeeUSDC[values.destination]} USDC`}</span>
                   </p>
                 )}
-                {config.enablePruvOriginFeeUSDC &&
-                  values.origin.startsWith('pruv') &&
-                  originToken?.symbol === 'USDC' ? (
-                    <p className="flex">
-                      <span className="min-w-[7.5rem]">Amount Received</span>
-                      <span className="font-bold">{`${(parseFloat(amount) - config.pruvOriginFeeUSDC[values.destination]).toFixed(2)} USDC`}</span>
-                    </p>
-                  ) : (
-                    <p className="flex">
-                      <span className="min-w-[7.5rem]">Amount Received</span>
-                      <span className="font-bold">{`${amount} ${originToken?.symbol || ''}`}</span>
-                    </p>
-                  )}
+                <p className="flex">
+                  <span className="min-w-[7.5rem]">Amount Received</span>
+                  <span className="font-bold">{`${receivedAmount} ${originToken?.symbol || ''}`}</span>
+                </p>
               </div>
             </div>
           </>
