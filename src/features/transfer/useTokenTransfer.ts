@@ -3,7 +3,7 @@ import {
   ProviderType,
   TypedTransactionReceipt,
   WarpCore,
-  WarpTxCategory,
+  WarpTxCategory, WarpTypedTransaction,
 } from '@hyperlane-xyz/sdk';
 import { toTitleCase, toWei } from '@hyperlane-xyz/utils';
 import {
@@ -157,7 +157,11 @@ async function executeTransfer({
     });
 
     // Add extra USDC approval transaction if origin is pruv and token is not USDC
-    if (config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && originToken.symbol !== 'USDC') {
+    if (
+      config.enablePruvOriginFeeUSDC &&
+      origin.startsWith('pruv') &&
+      originToken.symbol !== 'USDC'
+    ) {
       const originProviderType = multiProvider.getProvider(origin).type;
 
       // Get the bridge fee for the destination chain from config
@@ -177,11 +181,11 @@ async function executeTransfer({
         recipient: originToken.addressOrDenom, // spender address
       });
 
-      const usdcApprovalTx = {
+      const usdcApprovalTx: WarpTypedTransaction = {
         category: WarpTxCategory.Approval,
         type: originProviderType,
         transaction: populatedApprovalTx,
-      } as any; // Type assertion to bypass TypeScript strict checking
+      };
 
       // Insert the custom approval transaction at the beginning
       txs.unshift(usdcApprovalTx);
