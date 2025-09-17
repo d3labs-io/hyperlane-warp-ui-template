@@ -24,14 +24,14 @@ index 0176989..65f616b 100644
      }
      else {
 diff --git a/node_modules/@hyperlane-xyz/sdk/dist/warp/WarpCore.js b/node_modules/@hyperlane-xyz/sdk/dist/warp/WarpCore.js
-index ba679ed..b96b6bb 100644
+index ba679ed..cc7873e 100644
 --- a/node_modules/@hyperlane-xyz/sdk/dist/warp/WarpCore.js
 +++ b/node_modules/@hyperlane-xyz/sdk/dist/warp/WarpCore.js
 @@ -97,6 +97,12 @@ export class WarpCore {
       */
      async getLocalTransferFee({ originToken, destination, sender, senderPubKey, interchainFee, }) {
          this.logger.debug(`Estimating local transfer gas to ${destination}`);
-+        // Check if origin chain starts with "pruv"
++        // Check if origin chain is pruv
 +        if (originToken.chainName.startsWith('pruv')) {
 +            // Pruv's custom smart contract may revert if USDC is not approved for bridge fee
 +            // Gas price will be zero before TGE anyway, so return zero for local gas fees
