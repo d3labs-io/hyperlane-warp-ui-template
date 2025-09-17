@@ -617,10 +617,15 @@ function ReviewDetails({
                 )}
                 {config.enablePruvOriginFeeUSDC &&
                   values.origin.startsWith('pruv') &&
-                  originToken?.symbol === 'USDC' && (
+                  originToken?.symbol === 'USDC' ? (
                     <p className="flex">
                       <span className="min-w-[7.5rem]">Amount Received</span>
                       <span className="font-bold">{`${(parseFloat(amount) - config.pruvOriginFeeUSDC[values.destination]).toFixed(2)} USDC`}</span>
+                    </p>
+                  ) : (
+                    <p className="flex">
+                      <span className="min-w-[7.5rem]">Amount Received</span>
+                      <span className="font-bold">{`${amount} ${originToken?.symbol || ''}`}</span>
                     </p>
                   )}
               </div>
