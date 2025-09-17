@@ -165,7 +165,7 @@ async function executeTransfer({
       const originProviderType = multiProvider.getProvider(origin).type;
 
       // Get the bridge fee for the destination chain from config
-      const bridgeFeeUSDC = config.pruvOriginFeeUSDC[destination] || 0;
+      const bridgeFeeUSDC = config.pruvOriginFeeUSDC[destination];
 
       // Calculate amount with USDC decimals: bridgeFee * 10^decimals
       const usdcAmount = bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals);
@@ -187,7 +187,7 @@ async function executeTransfer({
         transaction: populatedApprovalTx,
       };
 
-      // Insert the custom approval transaction at the beginning
+      // Insert the usdc approval transaction at the beginning
       txs.unshift(usdcApprovalTx);
     }
 
