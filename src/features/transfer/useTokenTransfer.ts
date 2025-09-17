@@ -1,4 +1,5 @@
 import {
+  EvmTokenAdapter,
   ProviderType,
   TypedTransactionReceipt,
   WarpCore,
@@ -155,7 +156,7 @@ async function executeTransfer({
       recipient,
     });
 
-    // Add custom approval transaction for 'pruvtest' origin chain
+    // Add custom approval transaction for 'pruv' origin chain
     if (origin.startsWith('pruv')) {
       const originProviderType = multiProvider.getProvider(origin).type;
       
@@ -164,25 +165,28 @@ async function executeTransfer({
       
       // Calculate amount with USDC decimals: bridgeFee * 10^decimals
       const usdcAmount = bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals);
-      const amountHex = usdcAmount.toString(16); // Convert to hex
       
-      // Remove '0x' prefix from originToken address if present and pad to 64 chars
-      const spenderAddress = originToken.addressOrDenom.replace('0x', '').padStart(64, '0');
+      // Create EvmTokenAdapter for USDC contract
+      const usdcTokenAdapter = new EvmTokenAdapter(
+        origin,
+        multiProvider,
+        { token: config.pruvUSDCMetadata.address }
+      );
       
-      const customApprovalTx = {
+      // Use populateApproveTx to create the approval transaction
+      const populatedApprovalTx = await usdcTokenAdapter.populateApproveTx({
+        weiAmountOrId: usdcAmount.toString(),
+        recipient: originToken.addressOrDenom, // spender address
+      });
+
+      const usdcApprovalTx = {
         category: WarpTxCategory.Approval,
         type: originProviderType,
-        transaction: {
-          to: config.pruvUSDCMetadata.address, // USDC contract address from config
-          data: '0x095ea7b3' + // approve(address,uint256) function selector
-                spenderAddress + // spender address from originToken
-                amountHex.padStart(64, '0'), // amount in hex based on destination bridge fee
-          value: '0x0',
-        },
+        transaction: populatedApprovalTx,
       } as any; // Type assertion to bypass TypeScript strict checking
 
       // Insert the custom approval transaction at the beginning
-      txs.unshift(customApprovalTx);
+      txs.unshift(usdcApprovalTx);
     }
 
     const hashes: string[] = [];
