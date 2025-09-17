@@ -529,6 +529,10 @@ function ReviewDetails({
 
   const isLoading = isApproveLoading || isQuoteLoading;
 
+  // Check if we need to show custom approval for pruvtest
+  const needAdditionalUSDCApproval = values.origin.startsWith('pruv') && originTokenSymbol !== 'USDC';
+  const totalApprovals = (isApproveRequired ? 1 : 0) + (needAdditionalUSDCApproval ? 1 : 0);
+
   const interchainQuote =
     originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
       ? fees?.interchainQuote.plus(chainsRentEstimate[originToken.chainName])
@@ -554,9 +558,18 @@ function ReviewDetails({
           </div>
         ) : (
           <>
+            {needAdditionalUSDCApproval && (
+              <div>
+                <h4>Transaction 1: Approve USDC (For Bridge Fee)</h4>
+                <div className="ml-1.5 mt-1.5 space-y-1.5 border-l border-gray-300 pl-2 text-xs">
+                  <p>{`Router Address: ${originToken?.addressOrDenom}`}</p>
+                  <p>{`USDC Address: ${config.pruvUSDCMetadata.address}`}</p>
+                </div>
+              </div>
+            )}
             {isApproveRequired && (
               <div>
-                <h4>Transaction 1: Approve Transfer</h4>
+                <h4>Transaction {needAdditionalUSDCApproval ? '2' : '1'}: Approve Transfer</h4>
                 <div className="ml-1.5 mt-1.5 space-y-1.5 border-l border-gray-300 pl-2 text-xs">
                   <p>{`Router Address: ${originToken?.addressOrDenom}`}</p>
                   {originToken?.collateralAddressOrDenom && (
@@ -566,7 +579,7 @@ function ReviewDetails({
               </div>
             )}
             <div>
-              <h4>{`Transaction${isApproveRequired ? ' 2' : ''}: Transfer Remote`}</h4>
+              <h4>{`Transaction ${totalApprovals + 1}: Transfer Remote`}</h4>
               <div className="ml-1.5 mt-1.5 space-y-1.5 border-l border-gray-300 pl-2 text-xs">
                 {destinationToken?.addressOrDenom && (
                   <p className="flex">
