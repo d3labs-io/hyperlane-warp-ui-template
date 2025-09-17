@@ -159,20 +159,18 @@ async function executeTransfer({
     // Add custom approval transaction for 'pruv' origin chain
     if (origin.startsWith('pruv')) {
       const originProviderType = multiProvider.getProvider(origin).type;
-      
+
       // Get the bridge fee for the destination chain from config
       const bridgeFeeUSDC = config.pruvOriginFeeUSDC[destination] || 0;
-      
+
       // Calculate amount with USDC decimals: bridgeFee * 10^decimals
       const usdcAmount = bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals);
-      
+
       // Create EvmTokenAdapter for USDC contract
-      const usdcTokenAdapter = new EvmTokenAdapter(
-        origin,
-        multiProvider,
-        { token: config.pruvUSDCMetadata.address }
-      );
-      
+      const usdcTokenAdapter = new EvmTokenAdapter(origin, multiProvider, {
+        token: config.pruvUSDCMetadata.address,
+      });
+
       // Use populateApproveTx to create the approval transaction
       const populatedApprovalTx = await usdcTokenAdapter.populateApproveTx({
         weiAmountOrId: usdcAmount.toString(),

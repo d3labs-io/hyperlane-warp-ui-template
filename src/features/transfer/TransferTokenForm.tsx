@@ -530,7 +530,8 @@ function ReviewDetails({
   const isLoading = isApproveLoading || isQuoteLoading;
 
   // Check if we need to show custom approval for pruvtest
-  const needAdditionalUSDCApproval = values.origin.startsWith('pruv') && originTokenSymbol !== 'USDC';
+  const needAdditionalUSDCApproval =
+    values.origin.startsWith('pruv') && originTokenSymbol !== 'USDC';
   const totalApprovals = (isApproveRequired ? 1 : 0) + (needAdditionalUSDCApproval ? 1 : 0);
 
   const interchainQuote =
