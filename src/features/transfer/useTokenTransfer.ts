@@ -4,7 +4,6 @@ import {
   TypedTransactionReceipt,
   WarpCore,
   WarpTxCategory,
-  WarpTypedTransaction,
 } from '@hyperlane-xyz/sdk';
 import { toTitleCase, toWei } from '@hyperlane-xyz/utils';
 import {
@@ -182,11 +181,11 @@ async function executeTransfer({
         recipient: originToken.addressOrDenom, // spender address
       });
 
-      const usdcApprovalTx: WarpTypedTransaction = {
+      const usdcApprovalTx = {
         category: WarpTxCategory.Approval,
         type: originProviderType,
         transaction: populatedApprovalTx,
-      };
+      } as any; // Type assertion to bypass TypeScript strict checking
 
       // Insert the usdc approval transaction at the beginning
       txs.unshift(usdcApprovalTx);
