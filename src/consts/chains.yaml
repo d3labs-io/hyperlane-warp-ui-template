@@ -21,7 +21,7 @@
 pruv:
   # yaml-language-server: $schema=../schema.json
   blockExplorers:
-    - apiKey: ""
+    - apiKey: ''
       apiUrl: https://explorer.pruv.network/api
       family: blockscout
       name: PruvExplorer
