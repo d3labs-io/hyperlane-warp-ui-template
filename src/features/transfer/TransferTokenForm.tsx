@@ -63,6 +63,7 @@ import { TransferFormValues } from './types';
 import { useRecipientBalanceWatcher } from './useBalanceWatcher';
 import { useFeeQuotes } from './useFeeQuotes';
 import { useTokenTransfer } from './useTokenTransfer';
+import { getAmountWithPruvUsdcBonus, getPruvOriginFeeUSDC } from './pruvFee';
 
 export function TransferTokenForm() {
   const multiProvider = useMultiProvider();
@@ -496,11 +497,18 @@ function ReviewDetails({
   const destinationToken = connection?.token;
   const isNft = originToken?.isNft();
 
+  const transferAmount = getAmountWithPruvUsdcBonus({
+    amount,
+    origin: values.origin,
+    destination,
+    tokenSymbol: originTokenSymbol,
+  });
+
   const scaledAmount = useMemo(() => {
     if (!originToken?.scale || !destinationToken?.scale) return null;
     if (!visible || originToken.scale === destinationToken.scale) return null;
 
-    const amountWei = toWei(amount, originToken.decimals);
+    const amountWei = toWei(transferAmount, originToken.decimals);
     const precisionFactor = 100000;
 
     const convertedAmount = convertToScaledAmount({
@@ -516,9 +524,9 @@ function ReviewDetails({
       originScale: originToken.scale,
       destinationScale: destinationToken.scale,
     };
-  }, [amount, originToken, destinationToken, visible]);
+  }, [transferAmount, originToken, destinationToken, visible]);
 
-  const amountWei = isNft ? amount.toString() : toWei(amount, originToken?.decimals);
+  const amountWei = isNft ? amount.toString() : toWei(transferAmount, originToken?.decimals);
 
   const { isLoading: isApproveLoading, isApproveRequired } = useIsApproveRequired(
     originToken,
@@ -529,15 +537,16 @@ function ReviewDetails({
 
   const isLoading = isApproveLoading || isQuoteLoading;
 
-  const isBridgeFeeUSDC = config.enablePruvOriginFeeUSDC && values.origin.startsWith('pruv');
+  const isBridgeFeeUSDC =
+    config.enablePruvOriginFeeUSDC &&
+    values.origin.startsWith('pruv') &&
+    !destination.startsWith('pruv') &&
+    getPruvOriginFeeUSDC(destination) > 0;
 
   // Check if we need to show usdc approval for pruv
   const needAdditionalUSDCApproval = isBridgeFeeUSDC && originTokenSymbol !== 'USDC';
   const totalApprovals = (isApproveRequired ? 1 : 0) + (needAdditionalUSDCApproval ? 1 : 0);
-  const receivedAmount =
-    isBridgeFeeUSDC && originToken?.symbol === 'USDC'
-      ? (parseFloat(amount) - config.pruvOriginFeeUSDC[values.destination]).toFixed(2)
-      : amount; // if token is USDC, take bridge fee from amount
+  const receivedAmount = amount;
 
   const interchainQuote =
     originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
@@ -617,7 +626,7 @@ function ReviewDetails({
                 {isBridgeFeeUSDC && (
                   <p className="flex">
                     <span className="min-w-[7.5rem]">Bridge Fee (USDC)</span>
-                    <span className="font-bold">{`${config.pruvOriginFeeUSDC[values.destination]} USDC`}</span>
+                    <span className="font-bold">{`${getPruvOriginFeeUSDC(destination)} USDC`}</span>
                   </p>
                 )}
                 <p className="flex">
@@ -712,18 +721,14 @@ async function validateForm(
       return [{ recipient: 'Warp Route address is not valid as recipient' }, null];
     }
 
-    // Check if origin is pruv and token symbol is USDC
-    if (config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && token.symbol === 'USDC') {
-      const inputAmount = parseFloat(amount);
-      // For USDC, input must be gt fee because the contract will deduct the fee from user input amount
-      const minimumAmount = config.pruvOriginFeeUSDC[destination] || 0;
-      if (minimumAmount > 0 && inputAmount <= minimumAmount) {
-        return [{ amount: `Amount must be greater than ${minimumAmount}` }, null];
-      }
-    }
-
     const transferToken = await getTransferToken(warpCore, token, destinationToken);
-    const amountWei = toWei(amount, transferToken.decimals);
+    const amountForValidation = getAmountWithPruvUsdcBonus({
+      amount,
+      origin,
+      destination,
+      tokenSymbol: token.symbol,
+    });
+    const amountWei = toWei(amountForValidation, transferToken.decimals);
     const multiCollateralLimit = isMultiCollateralLimitExceeded(token, destination, amountWei);
 
     if (multiCollateralLimit) {
