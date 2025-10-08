@@ -6,12 +6,12 @@ describe('formatTimestamp', () => {
     const timestamp = 1697040000000; // Example timestamp
     const result = formatTimestamp(timestamp);
     const date = new Date(timestamp);
-    const expected = `${date.toLocaleTimeString()} ${date.toLocaleDateString()}`;
+    const expected = `${date.toLocaleTimeString()} ${date.toLocaleDateString()}`; // Adjust format as needed
     expect(result).toBe(expected);
   });
 
   it('should handle invalid timestamps gracefully', () => {
-    const invalidTimestamp = 'invalid';
+    const invalidTimestamp = 'invalid'; // Example invalid timestamp
     expect(() => formatTimestamp(Number(invalidTimestamp))).toThrowError('Invalid timestamp');
   });
 });

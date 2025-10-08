@@ -3,19 +3,26 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [tsconfigPaths(), react({})],
   assetsInclude: ['**/*.yaml'],
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.js'],
     coverage: {
+      reporter: ['text', 'json', 'html'],
       exclude: [
         ...coverageConfigDefaults.exclude,
-        'next.config.js',
+        '**/*.config.{js,ts}',
+        'src/global.d.ts',
+        'src/instrumentation.ts',
+        'src/middleware.ts',
         'src/mocks/**',
         'src/test/**',
         'src/**/*.d.ts',
+        'src/utils/test.ts',
+        'src/vendor/**',
+        'src/pages/**/*.tsx',
       ],
     },
   },
