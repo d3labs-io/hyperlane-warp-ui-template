@@ -227,41 +227,6 @@ async function executeTransfer({
       txs.unshift(usdcApprovalTx);
     }
 
-    // Add extra USDC approval transaction if origin is pruv and token is not USDC
-    if (
-      config.enablePruvOriginFeeUSDC &&
-      origin.startsWith('pruv') &&
-      originToken.symbol !== 'USDC'
-    ) {
-      const originProviderType = multiProvider.getProvider(origin).type;
-
-      // Get the bridge fee for the destination chain from config
-      const bridgeFeeUSDC = config.pruvOriginFeeUSDC[destination];
-
-      // Calculate amount with USDC decimals: bridgeFee * 10^decimals
-      const usdcAmount = bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals);
-
-      // Create EvmTokenAdapter for USDC contract
-      const usdcTokenAdapter = new EvmTokenAdapter(origin, multiProvider, {
-        token: config.pruvUSDCMetadata.address,
-      });
-
-      // Use populateApproveTx to create the approval transaction
-      const populatedApprovalTx = await usdcTokenAdapter.populateApproveTx({
-        weiAmountOrId: usdcAmount.toString(),
-        recipient: originToken.addressOrDenom, // spender address
-      });
-
-      const usdcApprovalTx = {
-        category: WarpTxCategory.Approval,
-        type: originProviderType,
-        transaction: populatedApprovalTx,
-      } as any; // Type assertion to bypass TypeScript strict checking
-
-      // Insert the usdc approval transaction at the beginning
-      txs.unshift(usdcApprovalTx);
-    }
-
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;
 
