@@ -736,16 +736,19 @@ async function validateForm(
 
             if (totalCost.isGreaterThan(balanceBn)) {
               const maxTransfer = balanceBn.minus(bridgeFee);
-              const clampedMaxTransfer = maxTransfer.isGreaterThan(0)
-                ? maxTransfer
-                : new BigNumber(0);
+              if (maxTransfer.isLessThanOrEqualTo(0)) {
+                return [
+                  {
+                    amount: 'Insufficient balance',
+                  },
+                  null,
+                ];
+              }
+              const formattedMaxTransfer = maxTransfer.toFixed(2, BigNumber.ROUND_FLOOR);
 
               return [
                 {
-                  amount: `Maximum transfer amount is ${clampedMaxTransfer.toFixed(
-                    2,
-                    BigNumber.ROUND_FLOOR,
-                  )}`,
+                  amount: `Maximum transfer amount is ${formattedMaxTransfer}`,
                 },
                 null,
               ];
