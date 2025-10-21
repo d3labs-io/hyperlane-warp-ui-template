@@ -12,7 +12,7 @@ import {
   TrustWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
-import { PropsWithChildren, useCallback, useMemo } from 'react';
+import { ComponentType, PropsWithChildren, useCallback, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { logger } from '../../../utils/logger';
 
@@ -39,11 +39,14 @@ export function SolanaWalletContext({ children }: PropsWithChildren<unknown>) {
     toast.error('Error preparing Solana wallet');
   }, []);
 
+  // Cast WalletProvider to a ComponentType to satisfy JSX typing
+  const WP = WalletProvider as unknown as ComponentType<any>;
+
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} onError={onError} autoConnect>
+      <WP wallets={wallets} onError={onError} autoConnect>
         <WalletModalProvider>{children}</WalletModalProvider>
-      </WalletProvider>
+      </WP>
     </ConnectionProvider>
   );
 }

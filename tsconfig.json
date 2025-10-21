@@ -10,8 +10,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
@@ -24,7 +24,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es5"
+    "target": "es2020"
   },
   "types": ["node", "jest", "@testing-library/jest-dom"],
   "exclude": ["node_modules", "dist"],

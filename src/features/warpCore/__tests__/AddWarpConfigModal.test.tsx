@@ -26,8 +26,8 @@ const {
     mockSetWarpCoreConfigOverrides: vi.fn().mockResolvedValue(undefined),
     mockToastSuccess: vi.fn(),
     mockMultiProvider: { hasChain: vi.fn(() => true) },
-    mockTryParseJsonOrYaml: vi.fn(() => ({ success: true, data: config })),
-    mockSafeParse: vi.fn(() => ({ success: true, data: config })),
+    mockTryParseJsonOrYaml: vi.fn(() => ({ success: true, data: config })) as unknown as any,
+    mockSafeParse: vi.fn(() => ({ success: true, data: config })) as unknown as any,
   };
 });
 
