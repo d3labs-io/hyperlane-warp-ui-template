@@ -687,6 +687,13 @@ function useFormInitialValues(): TransferFormValues {
 const insufficientFundsErrMsg = /insufficient.[funds|lamports]/i;
 const emptyAccountErrMsg = /AccountNotFound/i;
 
+// Helper function to get USDC token from warpCore for a specific chain
+function getUSDCTokenForChain(warpCore: WarpCore, chainName: ChainName): Token | null {
+  return warpCore.tokens.find(
+    (token) => token.chainName === chainName && token.symbol === 'USDC'
+  ) || null;
+}
+
 async function validateForm(
   warpCore: WarpCore,
   values: TransferFormValues,
@@ -714,7 +721,8 @@ async function validateForm(
       origin,
       accounts,
     );
-
+    /* Check if user has sufficient USDC balance for bridge fee when sending USDC tokens
+     from PRUV to non-PRUV and the token is USDC */
     if (
       config.enablePruvOriginFeeUSDC &&
       origin.startsWith('pruv') &&
@@ -756,6 +764,41 @@ async function validateForm(
           }
         } catch (balanceError) {
           logger.warn('Unable to fetch balance for PRUV USDC validation', balanceError);
+        }
+      }
+    }
+
+    /* Check if user has sufficient USDC balance handle bridge fee 
+    when sending tokens from PRUV to non-PRUV and the token is not USDC */
+    if (
+      config.enablePruvOriginFeeUSDC &&
+      origin.startsWith('pruv') &&
+      !destination.startsWith('pruv')
+    ) {
+      const bridgeFeeValue = config.pruvOriginFeeUSDC[destination];
+      const bridgeFee = bridgeFeeValue ? new BigNumber(bridgeFeeValue) : new BigNumber(0);
+      
+      if (address && bridgeFee.isGreaterThan(0)) {
+        try {
+          const usdcToken = getUSDCTokenForChain(warpCore, origin);
+          if (usdcToken) {
+            const usdcBalanceResult = await usdcToken.getBalance(warpCore.multiProvider, address);
+            if (usdcBalanceResult) {
+              const usdcBalanceDecimal = usdcBalanceResult.getDecimalFormattedAmount();
+              const usdcBalanceBn = new BigNumber(usdcBalanceDecimal.toString());
+
+              if (usdcBalanceBn.isLessThan(bridgeFee)) {
+                return [
+                  {
+                    amount: `${bridgeFee.toString()} USDC is required for bridge fee`,
+                  },
+                  null,
+                ];
+              }
+            }
+          }
+        } catch (balanceError) {
+          logger.warn('Unable to fetch USDC balance for bridge fee validation', balanceError);
         }
       }
     }
