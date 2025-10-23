@@ -534,10 +534,7 @@ function ReviewDetails({
   // Check if we need to show usdc approval for pruv
   const needAdditionalUSDCApproval = isBridgeFeeUSDC && originTokenSymbol !== 'USDC';
   const totalApprovals = (isApproveRequired ? 1 : 0) + (needAdditionalUSDCApproval ? 1 : 0);
-  const receivedAmount =
-    isBridgeFeeUSDC && originToken?.symbol === 'USDC'
-      ? (parseFloat(amount) - config.pruvOriginFeeUSDC[values.destination]).toFixed(2)
-      : amount; // if token is USDC, take bridge fee from amount
+  const receivedAmount = amount;
 
   const interchainQuote =
     originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
@@ -690,6 +687,14 @@ function useFormInitialValues(): TransferFormValues {
 const insufficientFundsErrMsg = /insufficient.[funds|lamports]/i;
 const emptyAccountErrMsg = /AccountNotFound/i;
 
+// Helper function to get USDC token from warpCore for a specific chain
+function getUSDCTokenForChain(warpCore: WarpCore, chainName: ChainName): Token | null {
+  return (
+    warpCore.tokens.find((token) => token.chainName === chainName && token.symbol === 'USDC') ||
+    null
+  );
+}
+
 async function validateForm(
   warpCore: WarpCore,
   values: TransferFormValues,
@@ -712,13 +717,82 @@ async function validateForm(
       return [{ recipient: 'Warp Route address is not valid as recipient' }, null];
     }
 
-    // Check if origin is pruv and token symbol is USDC
-    if (config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && token.symbol === 'USDC') {
-      const inputAmount = parseFloat(amount);
-      // For USDC, input must be gt fee because the contract will deduct the fee from user input amount
-      const minimumAmount = config.pruvOriginFeeUSDC[destination] || 0;
-      if (minimumAmount > 0 && inputAmount <= minimumAmount) {
-        return [{ amount: `Amount must be greater than ${minimumAmount}` }, null];
+    const { address, publicKey: senderPubKey } = getAccountAddressAndPubKey(
+      warpCore.multiProvider,
+      origin,
+      accounts,
+    );
+    // Check bridge fee requirements for PRUV to non-PRUV transfers
+    if (
+      config.enablePruvOriginFeeUSDC &&
+      origin.startsWith('pruv') &&
+      !destination.startsWith('pruv')
+    ) {
+      const bridgeFeeValue = config.pruvOriginFeeUSDC[destination];
+      const bridgeFee = bridgeFeeValue ? new BigNumber(bridgeFeeValue) : new BigNumber(0);
+
+      if (address && bridgeFee.isGreaterThan(0)) {
+        try {
+          const usdcToken = getUSDCTokenForChain(warpCore, origin);
+          if (usdcToken) {
+            const usdcBalanceResult = await usdcToken.getBalance(warpCore.multiProvider, address);
+            if (usdcBalanceResult) {
+              const usdcBalanceDecimal = usdcBalanceResult.getDecimalFormattedAmount();
+              const usdcBalanceBn = new BigNumber(usdcBalanceDecimal.toString());
+
+              // For USDC tokens, check if total cost (amount + bridge fee) exceeds balance
+              // First, ensure there's any USDC balance at all
+              if (usdcBalanceBn.isLessThanOrEqualTo(0)) {
+                return [
+                  {
+                    amount: 'Insufficient balance',
+                  },
+                  null,
+                ];
+              }
+
+              // If balance exists but is less than the required bridge fee, show fee requirement
+              if (usdcBalanceBn.isLessThan(bridgeFee)) {
+                return [
+                  {
+                    amount: `${bridgeFee.toString()} USDC is required for bridge fee`,
+                  },
+                  null,
+                ];
+              }
+
+              // If the token being sent is USDC, ensure the transfer amount + bridge fee
+              // does not exceed available USDC balance. If it does, suggest a maximum
+              // transferable amount.
+              if (token.symbol === 'USDC') {
+                const parsedInput = new BigNumber(amount || 0);
+                const inputAmountBn = parsedInput.isNaN() ? new BigNumber(0) : parsedInput;
+                const totalCost = inputAmountBn.plus(bridgeFee);
+
+                if (totalCost.isGreaterThan(usdcBalanceBn)) {
+                  const maxTransfer = usdcBalanceBn.minus(bridgeFee);
+                  if (maxTransfer.isLessThanOrEqualTo(0)) {
+                    return [
+                      {
+                        amount: 'Insufficient balance',
+                      },
+                      null,
+                    ];
+                  }
+                  const formattedMaxTransfer = maxTransfer.toFixed(2, BigNumber.ROUND_FLOOR);
+                  return [
+                    {
+                      amount: `Maximum transfer amount is ${formattedMaxTransfer}`,
+                    },
+                    null,
+                  ];
+                }
+              }
+            }
+          }
+        } catch (balanceError) {
+          logger.warn('Unable to fetch USDC balance for bridge fee validation', balanceError);
+        }
       }
     }
 
@@ -734,12 +808,6 @@ async function validateForm(
         null,
       ];
     }
-
-    const { address, publicKey: senderPubKey } = getAccountAddressAndPubKey(
-      warpCore.multiProvider,
-      origin,
-      accounts,
-    );
 
     const result = await warpCore.validateTransfer({
       originTokenAmount: transferToken.amount(amountWei),
