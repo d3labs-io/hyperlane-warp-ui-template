@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTokenTransfer } from '../useTokenTransfer';
 import { TransferStatus } from '../types';
+import { useTokenTransfer } from '../useTokenTransfer';
 
 const {
   addTransferMock,
@@ -155,7 +155,8 @@ vi.mock('@hyperlane-xyz/sdk', async () => {
 });
 
 vi.mock('@hyperlane-xyz/utils', async () => {
-  const actual = await vi.importActual<typeof import('@hyperlane-xyz/utils')>('@hyperlane-xyz/utils');
+  const actual =
+    await vi.importActual<typeof import('@hyperlane-xyz/utils')>('@hyperlane-xyz/utils');
   return {
     ...actual,
     toTitleCase: (value: string) => value,
@@ -215,8 +216,12 @@ describe('useTokenTransfer', () => {
   });
 
   it('executes transfer flow and records transactions', async () => {
-    const confirmFirst = vi.fn().mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash1' } });
-    const confirmSecond = vi.fn().mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash2' } });
+    const confirmFirst = vi
+      .fn()
+      .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash1' } });
+    const confirmSecond = vi
+      .fn()
+      .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash2' } });
     sendTransactionMock
       .mockResolvedValueOnce({ hash: '0xhash-approval', confirm: confirmFirst })
       .mockResolvedValueOnce({ hash: '0xhash-transfer', confirm: confirmSecond });
@@ -238,11 +243,10 @@ describe('useTokenTransfer', () => {
       }),
     );
     expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Preparing);
-    expect(updateTransferStatusMock).toHaveBeenCalledWith(
-      0,
-      TransferStatus.ConfirmedTransfer,
-      { originTxHash: '0xhash-transfer', msgId: 'msg-1' },
-    );
+    expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.ConfirmedTransfer, {
+      originTxHash: '0xhash-transfer',
+      msgId: 'msg-1',
+    });
     expect(populateApproveTxMock).toHaveBeenCalled();
     expect(sendTransactionMock).toHaveBeenCalledTimes(2);
     expect(confirmFirst).toHaveBeenCalled();
