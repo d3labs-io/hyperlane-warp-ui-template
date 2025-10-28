@@ -7,6 +7,7 @@ export default defineConfig({
   assetsInclude: ['**/*.yaml'],
   test: {
     globals: true,
+    silent: false,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.js'],
     coverage: {
