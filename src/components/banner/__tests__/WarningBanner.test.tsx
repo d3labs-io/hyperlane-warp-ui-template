@@ -33,7 +33,7 @@ describe('WarningBanner', () => {
         Warning message
       </WarningBanner>,
     );
-    
+
     const button = screen.getByRole('button', { name: 'Click Me' });
     await user.click(button);
     expect(handleClick).toHaveBeenCalledTimes(1);
@@ -74,4 +74,3 @@ describe('WarningBanner', () => {
     expect(banner).toBeInTheDocument();
   });
 });
-
