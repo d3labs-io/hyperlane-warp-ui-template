@@ -39,7 +39,6 @@ export function SolanaWalletContext({ children }: PropsWithChildren<unknown>) {
     toast.error('Error preparing Solana wallet');
   }, []);
 
-  // Cast WalletProvider to a ComponentType to satisfy JSX typing
   const WP = WalletProvider as unknown as ComponentType<any>;
 
   return (
