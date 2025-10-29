@@ -1,8 +1,7 @@
-import { Token } from '@hyperlane-xyz/sdk';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { beforeEach } from 'node:test';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import React from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getDestinationNativeBalance,
   useBalance,
@@ -83,9 +82,9 @@ const createWrapper = () => {
     },
   });
   // eslint-disable-next-line react/display-name
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return ({ children }: { children: React.ReactNode }) => {
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
+  };
 };
 
 vi.mock('@hyperlane-xyz/utils', async () => {
@@ -101,6 +100,17 @@ vi.mock('../chains/hooks', () => ({
     getChainMetadata: vi.fn().mockReturnValue({ nativeToken: { addressOrDenom: '0xtoken1' } }),
   }),
 }));
+
+vi.mock('@hyperlane-xyz/sdk', async () => {
+  const actual = await vi.importActual<any>('@hyperlane-xyz/sdk');
+  return {
+    ...actual,
+    Token: {
+      ...actual.Token,
+      FromChainMetadataNativeToken: vi.fn(),
+    },
+  };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -214,7 +224,14 @@ describe('getDestinationNativeBalance', () => {
       }),
     };
 
-    vi.spyOn(Token, 'FromChainMetadataNativeToken').mockReturnValue(mockTokens[0]);
+    const mockNativeToken = {
+      addressOrDenom: '0xnative',
+      chainName: 'chain1',
+      getBalance: vi.fn().mockResolvedValue({ amount: '2000' }),
+    };
+
+    const Token = await import('@hyperlane-xyz/sdk').then((mod) => mod.Token);
+    vi.spyOn(Token, 'FromChainMetadataNativeToken').mockReturnValue(mockNativeToken as any);
 
     const result = getDestinationNativeBalance(
       mockMultiProvider as any,
@@ -237,6 +254,7 @@ describe('getDestinationNativeBalance', () => {
       }),
     };
 
+    const Token = await import('@hyperlane-xyz/sdk').then((mod) => mod.Token);
     vi.spyOn(Token, 'FromChainMetadataNativeToken').mockRejectedValue(new Error('Something wrong'));
 
     const result = getDestinationNativeBalance(
@@ -246,11 +264,3 @@ describe('getDestinationNativeBalance', () => {
     await waitFor(() => expect(result).resolves.toBeUndefined());
   });
 });
-
-// describe('useEvmWalletBalance', () => {
-//   it('return undefined when allow refetch false', async () => {
-//     const { result } = renderHook(() => useEvmWalletBalance('chain1', 100, 'token1', false));
-//     await waitFor(() => expect(result.current.isLoading).resolves.toBe(false));
-//     expect(result.current.balance).toBeUndefined();
-//   });
-// });
