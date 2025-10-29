@@ -65,7 +65,7 @@ describe('ChainSelectListModal', () => {
     );
 
     expect(chainSearchMenuMock).toHaveBeenCalledTimes(1);
-    const props = chainSearchMenuMock.mock.calls[0][0];
+    const props = (chainSearchMenuMock.mock.calls as any[])[0][0];
     expect(typeof props.onChangeOverrideMetadata).toBe('function');
     expect(props.customListItemField).toBe('displayName');
   });
@@ -82,7 +82,7 @@ describe('ChainSelectListModal', () => {
 
     render(<ChainSelectListModal isOpen close={close} onSelect={onSelect} />);
 
-    const props = (chainSearchMenuMock.mock.calls as any)[0][0] as any;
+    const props = (chainSearchMenuMock.mock.calls as any[])[0][0];
     props.onClickChain({ name: 'arbitrum' } as any);
 
     expect(onSelect).toHaveBeenCalledWith('arbitrum');

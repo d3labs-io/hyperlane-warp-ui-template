@@ -106,12 +106,6 @@ describe('WarpContextInitGate', () => {
     // Start not ready and capture timeout callback
     vi.mocked(useReadyMultiProvider).mockReturnValue(undefined);
 
-    let _timeoutCallback: (() => void) | undefined = undefined;
-    vi.mocked(useTimeout).mockImplementation((callback: () => void) => {
-      _timeoutCallback = callback;
-      return () => {};
-    });
-
     const { rerender } = render(
       <WarpContextInitGate>
         <div data-testid="child-content">Child Component</div>
