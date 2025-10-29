@@ -9,7 +9,7 @@ import {
   useOriginBalance,
 } from '../balances';
 
-const { mockTokens, mockWarpCore } = vi.hoisted(() => {
+const { mockWarpCore } = vi.hoisted(() => {
   const mockTokens: any[] = [
     {
       name: 'Token A',
@@ -58,7 +58,6 @@ const { mockTokens, mockWarpCore } = vi.hoisted(() => {
 
   return {
     mockWarpCore,
-    mockTokens,
   };
 });
 

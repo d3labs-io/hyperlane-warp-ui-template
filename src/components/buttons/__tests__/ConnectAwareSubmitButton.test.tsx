@@ -288,12 +288,6 @@ describe('ConnectAwareSubmitButton', () => {
 
   describe('Integration Tests', () => {
     it('should transition from error state to normal state after timeout', async () => {
-      let _timeoutCallback: (() => void) | null = null;
-      vi.mocked(useTimeout).mockImplementation((callback?: () => void) => {
-        _timeoutCallback = callback ?? null;
-        return () => {};
-      });
-
       const { rerender } = render(<ConnectAwareSubmitButton chainName="ethereum" text="Submit" />);
 
       // Initial state with error
