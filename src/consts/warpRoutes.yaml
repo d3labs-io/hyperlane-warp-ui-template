@@ -116,6 +116,41 @@ tokens:
     addressOrDenom: '0x1139db01B1E681aebBEf58FF750CdE6269b69cA1'
     connections:
       - token: ethereum|pruvtest|0x0d5Df1F4982fd249a8D142926F10B73e524a8cB8
+  ## USDT
+  - chainName: pruvtest
+    standard: EvmHypCollateralFiat
+    decimals: 6
+    symbol: USDT
+    name: Tether USD
+    addressOrDenom: '0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592'
+    collateralAddressOrDenom: '0xc547f385c7D0A50Bb4b4889dF4d863F0abAD2885'
+    connections:
+      - token: ethereum|bsctestnet|0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f
+      - token: ethereum|sepolia|0xfd999e47416E52D0E2e6EE080f4E0988B645f0da
+    logoURI: /images/tokens/USDT/logo.svg
+  - chainName: bsctestnet
+    standard: EvmHypCollateral
+    decimals: 18
+    symbol: USDT
+    name: USDT Token
+    addressOrDenom: '0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f'
+    collateralAddressOrDenom: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd'
+    connections:
+      - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
+    #      - token: ethereum|sepolia|0xfd999e47416E52D0E2e6EE080f4E0988B645f0da
+    logoURI: /images/tokens/USDT/logo.svg
+  - chainName: sepolia
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: USDT
+    name: Tether USD
+    addressOrDenom: '0xfd999e47416E52D0E2e6EE080f4E0988B645f0da'
+    collateralAddressOrDenom: '0xdF0C57f2649AEF8f45Ba1e696ACc21398cDC0f76'
+    connections:
+      - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
+    #      - token: ethereum|bsctestnet|0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f
+    logoURI: /images/tokens/USDT/logo.svg
+## USDT
 
 # STAGING #
 options: {}
