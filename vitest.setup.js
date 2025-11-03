@@ -3,6 +3,8 @@ import { cleanup } from '@testing-library/react';
 import React from 'react';
 import { afterEach, vi } from 'vitest';
 
+vi.mock('@solana/wallet-adapter-react-ui/styles.css', () => ({}));
+
 vi.mock('next/font/google', () => ({
   __esModule: true,
   Rubik: (options = {}) => ({
@@ -20,7 +22,7 @@ vi.mock('next/image', () => ({
 vi.mock('next/link', () => ({
   __esModule: true,
   default: ({ href, children, ...rest }) => {
-    const resolvedHref = typeof href === 'string' ? href : href?.pathname ?? '';
+    const resolvedHref = typeof href === 'string' ? href : (href?.pathname ?? '');
     return React.createElement('a', { href: resolvedHref, ...rest }, children);
   },
 }));

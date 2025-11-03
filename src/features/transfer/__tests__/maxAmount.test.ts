@@ -1,15 +1,42 @@
+import { TokenAmount } from '@hyperlane-xyz/sdk';
 import { useMutation } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getAccountAddressAndPubKey } from '@hyperlane-xyz/widgets';
+import { toast } from 'react-toastify';
 import { useMultiProvider } from '../../chains/hooks';
+import { isMultiCollateralLimitExceeded } from '../../limits/utils';
 import { useWarpCore } from '../../tokens/hooks';
+import { logger } from '../../../utils/logger';
 import { useFetchMaxAmount } from '../maxAmount';
 
 vi.mock('../../chains/hooks');
 vi.mock('../../tokens/hooks');
+vi.mock('../../limits/utils');
 vi.mock('@tanstack/react-query');
-vi.mock('react-toastify');
-vi.mock('@/utils/logger');
+vi.mock('@hyperlane-xyz/sdk', async () => {
+  const actual = await vi.importActual<typeof import('@hyperlane-xyz/sdk')>('@hyperlane-xyz/sdk');
+  return {
+    ...actual,
+    TokenAmount: vi.fn().mockImplementation((amount: unknown, token: unknown) => ({ amount, token })),
+  };
+});
+vi.mock('@hyperlane-xyz/widgets', () => ({
+  getAccountAddressAndPubKey: vi.fn(),
+}));
+vi.mock('react-toastify', () => ({
+  toast: {
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+vi.mock('../../../utils/logger', () => ({
+  logger: {
+    warn: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 describe('useFetchMaxAmount', () => {
   const mockMultiProvider = {
@@ -196,5 +223,115 @@ describe('useFetchMaxAmount', () => {
 
     // The hook should return the same mutation object reference
     expect(result.current.fetchMaxAmount).toBe(firstResult.fetchMaxAmount);
+  });
+});
+
+describe('fetchMaxAmount mutationFn', () => {
+  const mockMultiProvider = {
+    tryGetChainMetadata: vi.fn(),
+  };
+
+  const mockWarpCore = {
+    getMaxTransferAmount: vi.fn(),
+  };
+
+  const baseParams = {
+    accounts: {} as Record<string, unknown>,
+    balance: { id: 'balance' },
+    origin: 'ethereum',
+    destination: 'arbitrum',
+  } as any;
+
+  let capturedMutationFn: ((params: unknown) => Promise<unknown>) | undefined;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedMutationFn = undefined;
+    vi.mocked(useMultiProvider).mockReturnValue(mockMultiProvider as any);
+    vi.mocked(useWarpCore).mockReturnValue(mockWarpCore as any);
+    vi.mocked(useMutation).mockImplementation((options: any) => {
+      capturedMutationFn = options.mutationFn;
+      return {
+        mutateAsync: options.mutationFn,
+        isPending: false,
+      } as any;
+    });
+  });
+
+  it('returns the existing balance when account address is unavailable', async () => {
+    vi.mocked(getAccountAddressAndPubKey).mockReturnValue({ address: undefined } as any);
+
+    renderHook(() => useFetchMaxAmount());
+
+    const result = await capturedMutationFn!(baseParams);
+
+    expect(result).toBe(baseParams.balance);
+    expect(mockWarpCore.getMaxTransferAmount).not.toHaveBeenCalled();
+  });
+
+  it('returns warpCore max amount when available', async () => {
+    const mockMaxAmount = { id: 'maxAmount', token: { symbol: 'TOKEN' }, amount: BigInt(100) };
+    vi.mocked(getAccountAddressAndPubKey).mockReturnValue({
+      address: '0x1234',
+      publicKey: Promise.resolve('pubkey'),
+    } as any);
+    mockWarpCore.getMaxTransferAmount.mockResolvedValue(mockMaxAmount as any);
+    vi.mocked(isMultiCollateralLimitExceeded).mockReturnValue(null);
+
+    renderHook(() => useFetchMaxAmount());
+
+    const result = await capturedMutationFn!({
+      ...baseParams,
+      balance: { id: 'balance' },
+    });
+
+    expect(mockWarpCore.getMaxTransferAmount).toHaveBeenCalledWith({
+      balance: baseParams.balance,
+      destination: baseParams.destination,
+      sender: '0x1234',
+      senderPubKey: 'pubkey',
+    });
+    expect(result).toEqual(mockMaxAmount);
+  });
+
+  it('returns TokenAmount capped by multi collateral limit', async () => {
+    const mockedTokenAmountInstance = { id: 'token-amount' };
+    const mockToken = { symbol: 'MOCK', decimals: 6 };
+    const mockLimit = BigInt(1_000_000);
+
+    vi.mocked(getAccountAddressAndPubKey).mockReturnValue({
+      address: '0x5678',
+      publicKey: Promise.resolve('pub'),
+    } as any);
+    mockWarpCore.getMaxTransferAmount.mockResolvedValue({
+      token: mockToken,
+      amount: BigInt(2_000_000),
+    } as any);
+    vi.mocked(isMultiCollateralLimitExceeded).mockReturnValue(mockLimit);
+    vi.mocked(TokenAmount).mockReturnValue(mockedTokenAmountInstance as any);
+
+    renderHook(() => useFetchMaxAmount());
+
+    const result = await capturedMutationFn!(baseParams);
+
+    expect(TokenAmount).toHaveBeenCalledWith(mockLimit, mockToken);
+    expect(result).toBe(mockedTokenAmountInstance);
+  });
+
+  it('logs and shows toast on errors, returning undefined', async () => {
+    vi.mocked(getAccountAddressAndPubKey).mockImplementation(() => {
+      throw new Error('account failure');
+    });
+    mockMultiProvider.tryGetChainMetadata.mockReturnValue({ displayName: 'Ethereum' } as any);
+
+    renderHook(() => useFetchMaxAmount());
+
+    const result = await capturedMutationFn!(baseParams);
+
+    expect(logger.warn).toHaveBeenCalled();
+    expect(toast.warn).toHaveBeenCalledWith(
+      'Cannot simulate transfer, Ethereum native balance may be insufficient.',
+    );
+    expect(result).toBeUndefined();
   });
 });

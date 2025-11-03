@@ -1,12 +1,16 @@
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isWindowSizeMobile, isWindowSizeSmallMobile } from '../mediaQueries';
+import {
+  isWindowSizeMobile,
+  isWindowSizeSmallMobile,
+  useIsMobile,
+  useWindowSize,
+} from '../mediaQueries';
 
 // Mock window object
 const mockWindow = {
   innerWidth: 1024,
   innerHeight: 768,
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
 };
 
 Object.defineProperty(window, 'innerWidth', {
@@ -21,26 +25,50 @@ Object.defineProperty(window, 'innerHeight', {
   value: mockWindow.innerHeight,
 });
 
-Object.defineProperty(window, 'addEventListener', {
-  writable: true,
-  configurable: true,
-  value: mockWindow.addEventListener,
-});
-
-Object.defineProperty(window, 'removeEventListener', {
-  writable: true,
-  configurable: true,
-  value: mockWindow.removeEventListener,
-});
-
 describe('mediaQueries', () => {
+  let addEventListenerSpy: ReturnType<typeof vi.spyOn>;
+  let removeEventListenerSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+    removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
   });
 
   afterEach(() => {
     window.innerWidth = 1024;
     window.innerHeight = 768;
+    addEventListenerSpy.mockRestore();
+    removeEventListenerSpy.mockRestore();
+  });
+
+  describe('useWindowSize', () => {
+    it('returns current window dimensions by default and reacts to resize events', async () => {
+      window.innerWidth = 800;
+      window.innerHeight = 600;
+
+      const { result } = renderHook(() => useWindowSize());
+
+      expect(result.current).toEqual({ width: 800, height: 600 });
+
+      await act(async () => {
+        window.innerWidth = 500;
+        window.innerHeight = 400;
+        window.dispatchEvent(new Event('resize'));
+      });
+
+      expect(result.current).toEqual({ width: 500, height: 400 });
+      expect(addEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+      expect(removeEventListenerSpy).not.toHaveBeenCalled();
+    });
+
+    it('cleans up resize listener on unmount', () => {
+      const { unmount } = renderHook(() => useWindowSize());
+
+      unmount();
+
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+    });
   });
 
   describe('isWindowSizeMobile', () => {
@@ -76,6 +104,29 @@ describe('mediaQueries', () => {
 
     it('should return false for undefined width', () => {
       expect(isWindowSizeSmallMobile(undefined)).toBe(false); // Assuming default is non-small-mobile
+    });
+  });
+
+  describe('useIsMobile', () => {
+    it('tracks breakpoint in response to resize events', async () => {
+      window.innerWidth = 900;
+      const { result } = renderHook(() => useIsMobile());
+
+      expect(result.current).toBe(false);
+
+      await act(async () => {
+        window.innerWidth = 500;
+        window.dispatchEvent(new Event('resize'));
+      });
+
+      expect(result.current).toBe(true);
+
+      await act(async () => {
+        window.innerWidth = 900;
+        window.dispatchEvent(new Event('resize'));
+      });
+
+      expect(result.current).toBe(false);
     });
   });
 });
