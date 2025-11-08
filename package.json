@@ -75,6 +75,8 @@
     "eslint": "^9.14.0",
     "eslint-config-next": "^15.0.2",
     "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "postcss": "^8.4.47",
     "prettier": "^3.2.5",
     "prettier-plugin-organize-imports": "^4.1.0",
@@ -106,7 +108,9 @@
     "test": "vitest --watch false",
     "test:coverage": "vitest run --coverage",
     "prettier": "prettier --write ./src",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
   },
   "types": "dist/src/index.d.ts",
   "resolutions": {
