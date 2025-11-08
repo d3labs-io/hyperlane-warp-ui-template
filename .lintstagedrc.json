@@ -1,3 +1,7 @@
 {
-  "*.{js,ts,jsx,tsx}": ["npx prettier --write", "npx vitest related --run --coverage=false"]
+  "*.{js,ts,jsx,tsx}": [
+    "eslint --ext .js,.jsx,.ts,.tsx . --ignore-path .gitignore --fix",
+    "npx prettier --write",
+    "npx vitest related --run --coverage=false"
+  ]
 }

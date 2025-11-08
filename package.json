@@ -110,8 +110,7 @@
     "test:coverage": "vitest run --coverage",
     "prettier": "prettier --write ./src",
     "postinstall": "patch-package",
-    "prepare": "husky",
-    "lint-staged": "lint-staged"
+    "prepare": "husky"
   },
   "types": "dist/src/index.d.ts",
   "resolutions": {
