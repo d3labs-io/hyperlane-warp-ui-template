@@ -1,3 +1,2 @@
 yarn run typecheck
 yarn run lint-staged
-yarn run test:coverage

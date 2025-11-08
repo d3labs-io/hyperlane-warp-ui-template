@@ -104,6 +104,7 @@
     "build": "next build",
     "typecheck": "tsc",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "start": "next start",
     "test": "vitest --watch false",
     "test:coverage": "vitest run --coverage",

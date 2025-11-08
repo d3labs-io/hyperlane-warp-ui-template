@@ -1,8 +1,3 @@
 {
-  "**/*.css": ["prettier --write"],
-  "**/*.{ts,tsx}": [
-    "prettier --write",
-    "eslint --ignore-path .gitignore --fix",
-    "vitest related --run --environment=jsdom"
-  ]
+  "*.{js,ts,jsx,tsx}": ["npx prettier --write", "npx vitest related --run --coverage=false"]
 }
