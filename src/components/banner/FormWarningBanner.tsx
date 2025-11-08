@@ -14,7 +14,7 @@ export function FormWarningBanner({
         isVisible={isVisible}
         {...props}
       />
-      <div className={clsx('transition-all duration-500', isVisible ? 'pb-10' : 'pb-0')}>ssd</div>
+      <div className={clsx('transition-all duration-500', isVisible ? 'pb-10' : 'pb-0')}></div>
     </div>
   );
 }
