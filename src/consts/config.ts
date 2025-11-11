@@ -69,7 +69,7 @@ export const config: Config = Object.freeze({
   shouldDisableChains: false,
   rpcOverrides,
   gaslessChains: ['pruvtest'],
-  enablePruvOriginFeeUSDC: true,
+  enablePruvOriginFeeUSDC: false,
   pruvOriginFeeUSDC: {
     sepolia: 0.75,
     arbitrumsepolia: 0.1,
