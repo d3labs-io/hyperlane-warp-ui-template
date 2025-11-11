@@ -1,0 +1,15 @@
+# all chains use testIsm, so anyone can dispatch and relay message across all chains
+services:
+  relayer:
+    image: gcr.io/abacus-labs-dev/hyperlane-agent:agents-v1.4.0
+    command: ./relayer
+    restart: unless-stopped
+    environment:
+      CONFIG_FILES: /config/agent-config.json
+      HYP_DB: /tmp/hyperlane/relayer
+      HYP_DEFAULTSIGNER_TYPE: hexKey
+      HYP_DEFAULTSIGNER_KEY: ${PRIVATE_KEY}
+      HYP_RELAYCHAINS: sepolia,pruvtest,arbitrumsepolia
+    volumes:
+      - ./.agent_cache/relayer:/tmp/hyperlane/relayer
+      - ./config/agent-config.json:/config/agent-config.json:ro
