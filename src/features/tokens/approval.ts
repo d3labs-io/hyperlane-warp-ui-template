@@ -13,9 +13,7 @@ export function useIsApproveRequired(token?: IToken, amount?: string, enabled = 
   const owner = useAccountAddressForChain(multiProvider, token?.chainName);
 
   const { isLoading, isError, error, data } = useQuery({
-    // The Token class is not serializable, so we can't use it as a key
-    // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryKey: ['useIsApproveRequired', owner, amount, token?.addressOrDenom],
+    queryKey: ['useIsApproveRequired', owner, amount, token, warpCore],
     queryFn: async () => {
       if (!token || !owner || !amount) return false;
       return warpCore.isApproveRequired({ originTokenAmount: token.amount(amount), owner });
@@ -46,6 +44,7 @@ export function useIsUSDCBridgeFeeApproveRequired(
       spenderAddress,
       destination,
       originChain,
+      multiProvider,
     ],
     queryFn: async () => {
       if (!owner || !spenderAddress) return false;

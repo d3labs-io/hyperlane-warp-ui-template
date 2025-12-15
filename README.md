@@ -4,16 +4,19 @@ Pruv Bridge is a Hyperlane-powered web application for moving fungible tokens an
 
 ## Contents
 
-- [Highlights](#highlights)
-- [Tech stack](#tech-stack)
-- [Requirements](#requirements)
-- [Quick start](#quick-start)
-- [Development workflow](#development-workflow)
-- [Environment configuration](#environment-configuration)
-- [Architecture & key folders](#architecture--key-folders)
-- [Customization & feature flags](#customization--feature-flags)
-- [Deployment](#deployment)
-- [Troubleshooting & resources](#troubleshooting--resources)
+- [Pruv Bridge](#pruv-bridge)
+  - [Contents](#contents)
+  - [Highlights](#highlights)
+  - [Tech stack](#tech-stack)
+  - [Requirements](#requirements)
+  - [Quick start](#quick-start)
+    - [Running with Docker](#running-with-docker)
+  - [Development workflow](#development-workflow)
+  - [Environment configuration](#environment-configuration)
+  - [Architecture \& key folders](#architecture--key-folders)
+  - [Customization \& feature flags](#customization--feature-flags)
+  - [Deployment](#deployment)
+  - [Troubleshooting \& resources](#troubleshooting--resources)
 
 ## Highlights
 
@@ -59,39 +62,33 @@ Pruv Bridge is a Hyperlane-powered web application for moving fungible tokens an
 ### Running with Docker
 
 ```sh
-docker compose up --build
+# Install dependencies
+pnpm install
+
+# Build Next project
+pnpm run build
 ```
 
 The container exposes the Next.js server on port 3000. Provide env vars via `docker-compose.yaml` or `docker run -e` flags before building.
 
 ## Development workflow
 
-| Command                       | Purpose                                                          |
-| ----------------------------- | ---------------------------------------------------------------- |
-| `yarn dev`                    | Run Next.js with hot reload and debugging helpers.               |
-| `yarn build`                  | Create an optimized production build (`.next`).                  |
-| `yarn start`                  | Serve the production build locally.                              |
-| `yarn lint` / `yarn lint:fix` | Check (or auto-fix) lint issues via ESLint.                      |
-| `yarn typecheck`              | Run `tsc` in no-emit mode to verify types.                       |
-| `yarn test`                   | Execute Vitest suites once (no watch).                           |
-| `yarn test:coverage`          | Generate coverage reports (`coverage/`).                         |
-| `yarn prettier`               | Format the `src` tree with Prettier + Tailwind plugin.           |
-| `yarn clean`                  | Remove `.next`, `dist`, and `cache` artifacts for a clean slate. |
+```sh
+# Start the Next dev server
+pnpm run dev
+# Or with a custom projectId
+NEXT_PUBLIC_WALLET_CONNECT_ID=<projectId> pnpm run dev
+```
 
 ## Environment configuration
 
-All env vars can be added to `.env.local` (for dev) or the hosting platform. The defaults live in `src/consts/config.ts`.
+```sh
+# Lint check code
+pnpm run lint
 
-| Variable                                                   | Description                                                        | Default                       |
-| ---------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------- |
-| `NEXT_PUBLIC_WALLET_CONNECT_ID`                            | WalletConnect v2 project ID used by RainbowKit.                    | Required                      |
-| `NEXT_PUBLIC_VERSION`                                      | Version label surfaced in the UI/logs.                             | `0.0.0`                       |
-| `NEXT_PUBLIC_REGISTRY_URL` / `NEXT_PUBLIC_REGISTRY_BRANCH` | Point to a custom Hyperlane registry (and branch).                 | unset                         |
-| `NEXT_PUBLIC_GITHUB_PROXY`                                 | Proxy used by `GithubRegistry` when fetching remote configs.       | `https://proxy.hyperlane.xyz` |
-| `NEXT_PUBLIC_TRANSFER_BLACKLIST`                           | Comma-separated list of `origin-destination` CAIP IDs to block.    | unset                         |
-| `NEXT_PUBLIC_CHAIN_WALLET_WHITELISTS`                      | JSON map of chain → allowed wallet names, used to warn users.      | `{}`                          |
-| `NEXT_PUBLIC_RPC_OVERRIDES`                                | JSON object of RPC URLs per chain when you need bespoke endpoints. | unset                         |
-| `NEXT_PUBLIC_SENTRY_DSN`                                   | Enables Sentry client + server instrumentation when provided.      | unset                         |
+# Check code types
+pnpm run typecheck
+```
 
 ## Architecture & key folders
 
@@ -104,6 +101,10 @@ All env vars can be added to `.env.local` (for dev) or the hosting platform. The
 - `src/features/sanctions` & `src/features/limits` – Reusable guards for sanctioned addresses and per-route amount caps.
 - `src/consts` – App-wide configuration (`config.ts`), registry/chain definitions, tip/branding toggles, and global lists (blacklist, warp route whitelist).
 - `CUSTOMIZE.md` – Step-by-step guide for branding, token lists, chain metadata, and asset replacement.
+```sh
+# Format code using Prettier
+pnpm run prettier
+```
 
 ## Customization & feature flags
 

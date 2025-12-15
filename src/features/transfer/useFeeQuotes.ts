@@ -16,9 +16,7 @@ export function useFeeQuotes(
 
   const shouldFetch = enabled && !!destination && typeof tokenIndex === 'number';
   const { isLoading, isError, data, isFetching } = useQuery({
-    // The WarpCore class is not serializable, so we can't use it as a key
-    // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryKey: ['useFeeQuotes', origin, destination, tokenIndex],
+    queryKey: ['useFeeQuotes', origin, destination, tokenIndex, warpCore],
     queryFn: () => fetchFeeQuotes(warpCore, destination, tokenIndex),
     enabled: shouldFetch,
     refetchInterval: FEE_QUOTE_REFRESH_INTERVAL,

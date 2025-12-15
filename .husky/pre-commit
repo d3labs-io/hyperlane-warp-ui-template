@@ -1,4 +1,3 @@
-yarn run prettier
-yarn run lint
-yarn run typecheck
-yarn run lint-staged
+pnpm run prettier
+pnpm run lint
+pnpm run typecheck
