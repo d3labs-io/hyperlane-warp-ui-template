@@ -102,6 +102,7 @@ const nextConfig = {
   },
 
   reactStrictMode: true,
+  productionBrowserSourceMaps: false,
 };
 
 const sentryOptions = {

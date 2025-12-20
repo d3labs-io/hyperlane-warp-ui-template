@@ -28,6 +28,9 @@ export const sentryDefaultConfig = {
   defaultIntegrations: false,
   integrations: [],
   beforeSend(event, hint) {
+    if (event.message && event.message.includes('Non-critical error')) {
+      return null;
+    }
     if (event && event.message && filters.find((f) => event.message.match(f))) {
       return null;
     }
@@ -47,5 +50,12 @@ export const sentryDefaultConfig = {
     /extensions\//i,
     /^chrome:\/\//i,
     /^chrome-extension:\/\//i,
+    // Firefox extensions
+    /moz-extension:\/\//i,
+    // Generic blocked requests
+    /Blocked a frame with origin/i,
+    /extensions\/react-developer-tools\//,
+    /react-devtools/,
+    /^chrome-extension:\/\/.*react-devtools.*/,
   ],
 };

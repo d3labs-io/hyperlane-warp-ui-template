@@ -16,6 +16,9 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       Sentry.captureConsoleIntegration({
         levels: ['error'],
       }),
+      Sentry.feedbackIntegration({
+        colorScheme: 'system',
+      }),
       Sentry.dedupeIntegration(),
       Sentry.functionToStringIntegration(),
       Sentry.globalHandlersIntegration(),
