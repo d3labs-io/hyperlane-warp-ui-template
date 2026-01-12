@@ -103,7 +103,7 @@
   "scripts": {
     "clean": "rm -rf dist cache .next",
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS=\"--max-old-space-size=4192\" next build",
     "typecheck": "tsc",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

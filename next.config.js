@@ -101,7 +101,13 @@ const nextConfig = {
     NEXT_PUBLIC_VERSION: version,
   },
 
+  experimental: {
+    webpackMemoryOptimizations: true,
+    serverSourceMaps: false,
+  },
+
   reactStrictMode: true,
+  productionBrowserSourceMaps: false,
 };
 
 const sentryOptions = {
@@ -115,6 +121,12 @@ const sentryOptions = {
     excludeDebugStatements: true,
     excludeReplayIframe: true,
     excludeReplayShadowDom: true,
+  },
+  sourcemaps: {
+    disable: false,
+    assets: ['**/*.js', '**/*.js.map'],
+    ignore: ['**/node_modules/**'],
+    deleteSourcemapsAfterUpload: true,
   },
 };
 
