@@ -15,7 +15,7 @@ const FRAME_SRC_HOSTS = [
   'https://*.walletconnect.org',
   'https://cdn.solflare.com',
 ];
-const STYLE_SRC_HOSTS = [];
+const STYLE_SRC_HOSTS = ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'];
 const IMG_SRC_HOSTS = [
   'https://*.walletconnect.com',
   'https://*.githubusercontent.com',
@@ -28,8 +28,9 @@ const cspHeader = `
   style-src 'self' 'unsafe-inline' ${STYLE_SRC_HOSTS.join(' ')};
   connect-src *;
   img-src 'self' blob: data: ${IMG_SRC_HOSTS.join(' ')};
-  font-src 'self' data:;
+  font-src 'self' ${STYLE_SRC_HOSTS.join(' ')};
   object-src 'none';
+  worker-src 'self' blob:;
   base-uri 'self';
   form-action 'self';
   frame-src 'self' ${FRAME_SRC_HOSTS.join(' ')};
