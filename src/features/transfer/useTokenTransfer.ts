@@ -14,7 +14,6 @@ import {
 } from '@hyperlane-xyz/widgets';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
-import { TxErrorToast } from '../../components/toast/TxErrorToast';
 import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
 import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
@@ -268,6 +267,7 @@ async function executeTransfer({
           chainName: origin,
           activeChainName: activeChain.chainName,
         });
+
         updateTransferStatus(
           transferIndex,
           (transferStatus = txCategoryToStatuses[tx.category][1]),
@@ -291,11 +291,38 @@ async function executeTransfer({
     });
   } catch (error: any) {
     logger.error(`Error at stage ${transferStatus}`, error);
-    const errorDetails = error.message || error.toString();
+    const errorDetails = error?.message || error?.toString?.() || '';
+    const errorDetailsExtended = [
+      errorDetails,
+      error?.shortMessage,
+      error?.cause?.message,
+      error?.cause?.toString?.(),
+      (() => {
+        try {
+          return JSON.stringify(error);
+        } catch {
+          return '';
+        }
+      })(),
+    ]
+      .filter(Boolean)
+      .join(' | ')
+      .toLowerCase();
     updateTransferStatus(transferIndex, TransferStatus.Failed);
-    if (errorDetails.includes(CHAIN_MISMATCH_ERROR)) {
-      // Wagmi switchNetwork call helps prevent this but isn't foolproof
-      toast.error('Wallet must be connected to origin chain');
+    const isInternalRpcErrorOnApprove =
+      transferStatus === TransferStatus.SigningApprove &&
+      errorDetailsExtended.includes('transactionexecutionerror') &&
+      errorDetailsExtended.includes('internalrpcerror') &&
+      errorDetailsExtended.includes('internal error was received');
+
+    if (isInternalRpcErrorOnApprove) {
+      toast.error(
+        'Network mismatch detected, switch wallet to the origin chain and try again.',
+        ERROR_TOAST_OPTIONS,
+      );
+    } else if (errorDetails.includes(CHAIN_MISMATCH_ERROR)) {
+      // Wagmi switchNetwork call `helps prevent this but isn't foolproof
+      toast.error('Wallet must be connected to origin chain', ERROR_TOAST_OPTIONS);
     } else if (
       errorDetails.includes(TRANSFER_TIMEOUT_ERROR1) ||
       errorDetails.includes(TRANSFER_TIMEOUT_ERROR2)
@@ -304,18 +331,7 @@ async function executeTransfer({
         `Transaction timed out, ${getChainDisplayName(multiProvider, origin)} may be busy. Please try again.`,
       );
     } else {
-      const customMsg = errorMessages[transferStatus];
-
-      toast.error(TxErrorToast, {
-        ...ERROR_TOAST_OPTIONS,
-        icon: false,
-        data: {
-          title: customMsg ? customMsg.title : 'Transfer Failed',
-          content: customMsg
-            ? customMsg.content
-            : 'An unexpected error occurred during your transfer. Please try again or contact the Pruv team.',
-        },
-      });
+      toast.error(errorMessages[transferStatus] || 'Unable to transfer tokens.');
     }
   }
 
@@ -323,37 +339,13 @@ async function executeTransfer({
   if (onDone) onDone();
 }
 
-const errorMessages: Partial<Record<TransferStatus, { title: string; content: string }>> = {
-  [TransferStatus.Preparing]: {
-    title: 'Preparation Failed',
-    content:
-      'Something went wrong while getting your transaction ready. Please try again or contact the Pruv team.',
-  },
-  [TransferStatus.CreatingTxs]: {
-    title: 'Transaction Creation Failed',
-    content:
-      'We couldn’t create your transactions. Please retry or contact the Pruv team for help.',
-  },
-  [TransferStatus.SigningApprove]: {
-    title: 'Approval Signature Failed',
-    content:
-      'Failed to sign the approval transaction. Check your wallet and try again, or contact the Pruv team.',
-  },
-  [TransferStatus.ConfirmingApprove]: {
-    title: 'Approval Confirmation Failed',
-    content:
-      'We couldn’t confirm your approval on-chain. Please wait a moment and try again, or contact the Pruv team.',
-  },
-  [TransferStatus.SigningTransfer]: {
-    title: 'Transfer Signature Failed',
-    content:
-      'Error signing the transfer transaction. Make sure your wallet is connected, then try again or contact the Pruv team.',
-  },
-  [TransferStatus.ConfirmingTransfer]: {
-    title: 'Transfer Confirmation Failed',
-    content:
-      'The transfer confirmation failed. Please check your network or contact the Pruv team for assistance.',
-  },
+const errorMessages: Partial<Record<TransferStatus, string>> = {
+  [TransferStatus.Preparing]: 'Error while preparing the transactions.',
+  [TransferStatus.CreatingTxs]: 'Error while creating the transactions.',
+  [TransferStatus.SigningApprove]: 'Error while signing the approve transaction.',
+  [TransferStatus.ConfirmingApprove]: 'Error while confirming the approve transaction.',
+  [TransferStatus.SigningTransfer]: 'Error while signing the transfer transaction.',
+  [TransferStatus.ConfirmingTransfer]: 'Error while confirming the transfer transaction.',
 };
 
 const txCategoryToStatuses: Record<WarpTxCategory, [TransferStatus, TransferStatus]> = {
