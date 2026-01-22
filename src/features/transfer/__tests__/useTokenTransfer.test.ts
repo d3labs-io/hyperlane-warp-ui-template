@@ -313,7 +313,35 @@ describe('useTokenTransfer', () => {
     });
 
     expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
-    expect(toastErrorMock).toHaveBeenCalledWith('Wallet must be connected to origin chain');
+    expect(toastErrorMock).toHaveBeenCalledWith('Wallet must be connected to origin chain', {
+      autoClose: 8000,
+      ariaLabel: 'Transfer Failed',
+      theme: 'colored',
+    });
+  });
+
+  it('surfaces internal rpc errors during approval as network mismatch', async () => {
+    const internalError = {
+      message: 'TransactionExecutionError: An internal error was received.',
+      cause: { message: 'InternalRpcError: An internal error was received.' },
+    };
+    sendTransactionMock.mockRejectedValue(internalError);
+
+    const { result } = renderHook(() => useTokenTransfer());
+
+    await act(async () => {
+      await result.current.triggerTransactions(values);
+    });
+
+    expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Network mismatch detected, switch wallet to the origin chain and try again.',
+      {
+        autoClose: 8000,
+        ariaLabel: 'Transfer Failed',
+        theme: 'colored',
+      },
+    );
   });
 
   it('displays timeout message when confirmations timeout', async () => {
