@@ -4,8 +4,9 @@ import { sentryDefaultConfig } from './sentry.default.config';
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     ...sentryDefaultConfig,
-    replaysSessionSampleRate: 0.1,
+    replaysSessionSampleRate: 1.0,
     replaysOnErrorSampleRate: 1.0,
+    tracesSampleRate: 1.0,
     integrations: [
       Sentry.breadcrumbsIntegration({
         console: false,
@@ -22,10 +23,12 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       Sentry.functionToStringIntegration(),
       Sentry.globalHandlersIntegration(),
       Sentry.httpContextIntegration(),
-      Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
+      Sentry.browserTracingIntegration(
+        Sentry.replayIntegration({
+          maskAllText: false,
+          blockAllMedia: false,
+        }),
+      ),
     ],
   });
 }
