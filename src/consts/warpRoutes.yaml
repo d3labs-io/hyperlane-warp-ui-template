@@ -138,6 +138,43 @@ tokens:
     standard: EvmHypSynthetic
     symbol: tt10
   ## tt10
+  ## tt20
+  - addressOrDenom: '0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58'
+    chainName: pruvtest
+    collateralAddressOrDenom: '0x00cfbE0561E70a75a3f67Aa752aFBEa04d394A9d'
+    connections:
+      - token: ethereum|arbitrumsepolia|0xC19aBaeeBd0cF0Aa357D70544475a07602fdb1F9
+      - token: ethereum|bsctestnet|0x3E31914d81803bC786f1aD2C0c1B78A82d787730
+      - token: ethereum|sepolia|0x77791fF1BfA12F62E2C5dF1C1314D1de1a1F8ac0
+    decimals: 6
+    name: test token 20
+    standard: EvmHypCollateral
+    symbol: tt20
+  - addressOrDenom: '0xC19aBaeeBd0cF0Aa357D70544475a07602fdb1F9'
+    chainName: arbitrumsepolia
+    connections:
+      - token: ethereum|pruvtest|0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58
+    decimals: 6
+    name: test token 20
+    standard: EvmHypSynthetic
+    symbol: tt20
+  - addressOrDenom: '0x3E31914d81803bC786f1aD2C0c1B78A82d787730'
+    chainName: bsctestnet
+    connections:
+      - token: ethereum|pruvtest|0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58
+    decimals: 6
+    name: test token 20
+    standard: EvmHypSynthetic
+    symbol: tt20
+  - addressOrDenom: '0x77791fF1BfA12F62E2C5dF1C1314D1de1a1F8ac0'
+    chainName: sepolia
+    connections:
+      - token: ethereum|pruvtest|0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58
+    decimals: 6
+    name: test token 20
+    standard: EvmHypSynthetic
+    symbol: tt20
+  ## tt20
   ## GSPPP
   - chainName: pruvtest
     standard: EvmHypCollateral
@@ -163,8 +200,8 @@ tokens:
     decimals: 6
     symbol: MMF
     name: MMF
-    addressOrDenom: "0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E"
-    collateralAddressOrDenom: "0xe4eaa3e1b84625cc7ab92abb2bd4fb0b2d1767cc"
+    addressOrDenom: '0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E'
+    collateralAddressOrDenom: '0xe4eaa3e1b84625cc7ab92abb2bd4fb0b2d1767cc'
     connections:
       - token: ethereum|sepolia|0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa
   - chainName: sepolia
@@ -172,7 +209,7 @@ tokens:
     decimals: 6
     symbol: MMF
     name: MMF
-    addressOrDenom: "0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa"
+    addressOrDenom: '0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa'
     connections:
       - token: ethereum|pruvtest|0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E
   ## MMF
