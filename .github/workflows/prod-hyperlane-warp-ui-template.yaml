@@ -6,11 +6,11 @@ on:
       - main
 
 env:
-  PROJECT_ID: "sto-prod-461714"
-  SERVICE_ACCOUNT: "prod-hyperlane-warp@sto-prod-461714.iam.gserviceaccount.com"
-  WORKLOAD_IDENTITY_PROVIDER: "projects/101395147265/locations/global/workloadIdentityPools/sto-prod-461714/providers/hyperlane-warp-gha-prvdr"
-  AR_REPO_LOCATION: "asia-southeast2"
-  AR_URL: "asia-southeast2-docker.pkg.dev/sto-prod-461714/bridge"
+  PROJECT_ID: 'sto-prod-461714'
+  SERVICE_ACCOUNT: 'prod-hyperlane-warp@sto-prod-461714.iam.gserviceaccount.com'
+  WORKLOAD_IDENTITY_PROVIDER: 'projects/101395147265/locations/global/workloadIdentityPools/sto-prod-461714/providers/hyperlane-warp-gha-prvdr'
+  AR_REPO_LOCATION: 'asia-southeast2'
+  AR_URL: 'asia-southeast2-docker.pkg.dev/sto-prod-461714/bridge'
 
 jobs:
   deploy-prod-hyperlane-warp:
@@ -42,7 +42,7 @@ jobs:
           password: '${{ steps.auth.outputs.access_token }}'
           registry: '${{ env.AR_REPO_LOCATION }}-docker.pkg.dev'
 
-      - name: "Fetch secrets from Google Secret Manager"
+      - name: 'Fetch secrets from Google Secret Manager'
         run: |
           echo "Fetching secrets from GCP..."
           gcloud secrets versions access latest \
@@ -50,13 +50,19 @@ jobs:
             --format='get(payload.data)' \
             | tr '_-' '/+' | base64 -d > secret.json
 
-      - name: "Convert JSON to .env"
+      - name: 'Convert JSON to .env'
         env:
           NEXT_PUBLIC_RPC_OVERRIDES: '{"chain1":{"http":"https://..."}}'
+          NEXT_PUBLIC_SENTRY_DSN: '${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}'
+          SENTRY_AUTH_TOKEN: '${{ secrets.SENTRY_AUTH_TOKEN }}'
+          NODE_ENV: 'production'
         run: |
           echo "Write env file..."
           jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' secret.json > .env
           echo "NEXT_PUBLIC_RPC_OVERRIDES='${NEXT_PUBLIC_RPC_OVERRIDES}'" >> .env
+          echo "NEXT_PUBLIC_SENTRY_DSN='${NEXT_PUBLIC_SENTRY_DSN}'" >> .env
+          echo "SENTRY_AUTH_TOKEN='${SENTRY_AUTH_TOKEN}'" >> .env
+          echo "NODE_ENV='${NODE_ENV}'" >> .env
 
       - name: Build and Push Container
         run: |-
@@ -79,9 +85,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: d3labs-io/argo-apps
-          ref: main                              
-          path: argo-apps                
-          token: ${{ secrets.CHART_REPO_TOKEN  }} 
+          ref: main
+          path: argo-apps
+          token: ${{ secrets.CHART_REPO_TOKEN  }}
 
       # Update image tag in values.yaml
       - name: Update image tag
