@@ -104,11 +104,11 @@ const nextConfig = {
 
   experimental: {
     webpackMemoryOptimizations: true,
-    serverSourceMaps: false,
+    serverSourceMaps: true,
   },
 
   reactStrictMode: true,
-  productionBrowserSourceMaps: false,
+  productionBrowserSourceMaps: true,
 };
 
 const sentryOptions = {
@@ -125,7 +125,6 @@ const sentryOptions = {
   },
   sourcemaps: {
     disable: false,
-    assets: ['**/*.js', '**/*.js.map'],
     ignore: ['**/node_modules/**'],
     deleteSourcemapsAfterUpload: true,
   },
