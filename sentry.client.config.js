@@ -23,12 +23,11 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       Sentry.functionToStringIntegration(),
       Sentry.globalHandlersIntegration(),
       Sentry.httpContextIntegration(),
-      Sentry.browserTracingIntegration(
-        Sentry.replayIntegration({
-          maskAllText: false,
-          blockAllMedia: false,
-        }),
-      ),
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({
+        maskAllText: false,
+        blockAllMedia: false,
+      }),
     ],
   });
 }

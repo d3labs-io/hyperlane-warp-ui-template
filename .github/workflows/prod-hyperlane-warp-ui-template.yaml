@@ -3,7 +3,7 @@ name: Deploy prod-hyperlane-warp-ui-template
 on:
   push:
     branches:
-      - main
+      - test-sentry
 
 env:
   PROJECT_ID: 'sto-prod-461714'
@@ -70,37 +70,37 @@ jobs:
 
           docker build -t hyperlane-warp . 
           # git hash tagging
-          docker tag hyperlane-warp ${{ env.AR_URL }}/hyperlane-warp:${git_hash}
-          docker push ${{ env.AR_URL }}/hyperlane-warp:${git_hash}
-          # latest tagging
-          docker tag hyperlane-warp ${{ env.AR_URL }}/hyperlane-warp:latest
-          docker push ${{ env.AR_URL }}/hyperlane-warp:latest
+          # docker tag hyperlane-warp ${{ env.AR_URL }}/hyperlane-warp:${git_hash}
+          # docker push ${{ env.AR_URL }}/hyperlane-warp:${git_hash}
+          # # latest tagging
+          # docker tag hyperlane-warp ${{ env.AR_URL }}/hyperlane-warp:latest
+          # docker push ${{ env.AR_URL }}/hyperlane-warp:latest
 
       - name: Get Git short hash
         id: vars
         run: echo "GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       # Checkout Helm chart repo
-      - name: Checkout Helm chart repo
-        uses: actions/checkout@v4
-        with:
-          repository: d3labs-io/argo-apps
-          ref: main
-          path: argo-apps
-          token: ${{ secrets.CHART_REPO_TOKEN  }}
+      # - name: Checkout Helm chart repo
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: d3labs-io/argo-apps
+      #     ref: main
+      #     path: argo-apps
+      #     token: ${{ secrets.CHART_REPO_TOKEN  }}
 
-      # Update image tag in values.yaml
-      - name: Update image tag
-        run: |
-          echo "Updating Helm chart image tag to ${GIT_HASH}..."
-          sed -i "s|tag: \".*\"|tag: \"${GIT_HASH}\"|g" argo-apps/accounts/sto-prod-pruv-finance/hyperlane-warp/values.yaml
+      # # Update image tag in values.yaml
+      # - name: Update image tag
+      #   run: |
+      #     echo "Updating Helm chart image tag to ${GIT_HASH}..."
+      #     sed -i "s|tag: \".*\"|tag: \"${GIT_HASH}\"|g" argo-apps/accounts/sto-prod-pruv-finance/hyperlane-warp/values.yaml
 
-      # Commit and push to repo chart
-      - name: Commit and push changes
-        run: |
-          cd argo-apps
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add accounts/sto-prod-pruv-finance/hyperlane-warp/values.yaml
-          git commit -m "chore: update image tag to ${GIT_HASH}" || echo "No changes to commit"
-          git push origin main
+      # # Commit and push to repo chart
+      # - name: Commit and push changes
+      #   run: |
+      #     cd argo-apps
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add accounts/sto-prod-pruv-finance/hyperlane-warp/values.yaml
+      #     git commit -m "chore: update image tag to ${GIT_HASH}" || echo "No changes to commit"
+      #     git push origin main

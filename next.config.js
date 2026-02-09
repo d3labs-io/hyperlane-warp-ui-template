@@ -114,6 +114,7 @@ const nextConfig = {
 const sentryOptions = {
   org: 'd3labs',
   project: 'pruv-bridge-web',
+  url: 'https://sentry.pruv.finance',
   authToken: process.env.SENTRY_AUTH_TOKEN,
   hideSourceMaps: true,
   tunnelRoute: '/monitoring-tunnel',
