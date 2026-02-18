@@ -148,3 +148,30 @@ bsctestnet:
   rpcUrls:
     - http: https://bsc-testnet.publicnode.com
     - http: https://bsc-testnet.drpc.org
+kairos:
+  blockExplorers:
+    - apiUrl: https://kairos-oapi.kaiascan.io/api
+      family: routescan
+      name: Kaiascan
+      url: https://kairos.kaiascan.io
+  blocks:
+    confirmations: 1
+    estimateBlockTime: 1
+    reorgPeriod: 5
+  chainId: 1001
+  deployer:
+    name: Abacus Works
+    url: https://www.hyperlane.xyz
+  displayName: Kairos
+  domainId: 1001
+  gasCurrencyCoinGeckoId: KAIA
+  logoURI:
+  name: kairos
+  nativeToken:
+    decimals: 18
+    name: Kaia
+    symbol: KAIA
+  protocol: ethereum
+  rpcUrls:
+    - http: https://public-en-kairos.node.kaia.io
+  technicalStack: other
