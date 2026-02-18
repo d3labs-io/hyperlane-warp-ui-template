@@ -47,6 +47,16 @@ tokens:
       - token: ethereum|bsctestnet|0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f
     #      - token: ethereum|sepolia|0xfd999e47416E52D0E2e6EE080f4E0988B645f0da
     logoURI: /images/tokens/USDT/logo.svg
+  - chainName: kairos
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: USDT
+    name: USDT Token
+    addressOrDenom: '0xB16ab32CD691f4C4BC3F0849d3f90Edb9572E1Ef'
+    collateralAddressOrDenom: '0xd077A400968890Eacc75cdc901F0356c943e4fDb'
+    connections:
+      - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
+    logoURI: /images/tokens/USDT/logo.svg
   - chainName: bsctestnet
     standard: EvmHypCollateral
     decimals: 18
@@ -163,8 +173,8 @@ tokens:
     decimals: 6
     symbol: MMF
     name: MMF
-    addressOrDenom: "0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E"
-    collateralAddressOrDenom: "0xe4eaa3e1b84625cc7ab92abb2bd4fb0b2d1767cc"
+    addressOrDenom: '0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E'
+    collateralAddressOrDenom: '0xe4eaa3e1b84625cc7ab92abb2bd4fb0b2d1767cc'
     connections:
       - token: ethereum|sepolia|0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa
   - chainName: sepolia
@@ -172,7 +182,7 @@ tokens:
     decimals: 6
     symbol: MMF
     name: MMF
-    addressOrDenom: "0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa"
+    addressOrDenom: '0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa'
     connections:
       - token: ethereum|pruvtest|0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E
   ## MMF
