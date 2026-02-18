@@ -165,7 +165,7 @@ kairos:
   displayName: Kairos
   domainId: 1001
   gasCurrencyCoinGeckoId: KAIA
-  logoURI:
+  logoURI: /images/chains/kairos/logo.svg
   name: kairos
   nativeToken:
     decimals: 18
