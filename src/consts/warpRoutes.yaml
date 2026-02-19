@@ -45,7 +45,18 @@ tokens:
     collateralAddressOrDenom: '0xc547f385c7D0A50Bb4b4889dF4d863F0abAD2885'
     connections:
       - token: ethereum|bsctestnet|0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f
+      - token: ethereum|kairos|0xB16ab32CD691f4C4BC3F0849d3f90Edb9572E1Ef
     #      - token: ethereum|sepolia|0xfd999e47416E52D0E2e6EE080f4E0988B645f0da
+    logoURI: /images/tokens/USDT/logo.svg
+  - chainName: kairos
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: USDT
+    name: USDT Token
+    addressOrDenom: '0xB16ab32CD691f4C4BC3F0849d3f90Edb9572E1Ef'
+    collateralAddressOrDenom: '0xd077A400968890Eacc75cdc901F0356c943e4fDb'
+    connections:
+      - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
     logoURI: /images/tokens/USDT/logo.svg
   - chainName: bsctestnet
     standard: EvmHypCollateral
