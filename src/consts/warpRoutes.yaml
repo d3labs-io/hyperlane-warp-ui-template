@@ -92,6 +92,7 @@ tokens:
     connections:
       - token: ethereum|arbitrumsepolia|0x4C89e71cbcFA162AA678E73e7BF6dd3Eb475839e
       - token: ethereum|sepolia|0x61aFa69a38ec4A252897259BA6C8322120B13C30
+      - token: ethereum|kairos|0x48571Fd3f8d6c25A4e00fb03a9D951EDF024A9a7
   - chainName: arbitrumsepolia
     standard: EvmHypSynthetic
     decimals: 18
@@ -110,6 +111,14 @@ tokens:
     connections:
       - token: ethereum|pruvtest|0x8188BFf405025BaA02b09c7524e73E3A16B15924
   #      - token: ethereum|arbitrumsepolia|0x4C89e71cbcFA162AA678E73e7BF6dd3Eb475839e
+  - chainName: kairos
+    standard: EvmHypSynthetic
+    decimals: 18
+    symbol: MOCKRWA
+    name: MockRWAToken
+    addressOrDenom: "0x48571Fd3f8d6c25A4e00fb03a9D951EDF024A9a7"
+    connections:
+      - token: ethereum|pruvtest|0x8188BFf405025BaA02b09c7524e73E3A16B15924
   ## Test ERC20 Token - with USDC bridge fee ##
 
   ## tt10
@@ -227,3 +236,5 @@ tokens:
 
 # STAGING #
 options: {}
+
+
