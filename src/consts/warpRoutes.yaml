@@ -116,7 +116,7 @@ tokens:
     decimals: 18
     symbol: MOCKRWA
     name: MockRWAToken
-    addressOrDenom: "0x48571Fd3f8d6c25A4e00fb03a9D951EDF024A9a7"
+    addressOrDenom: '0x48571Fd3f8d6c25A4e00fb03a9D951EDF024A9a7'
     connections:
       - token: ethereum|pruvtest|0x8188BFf405025BaA02b09c7524e73E3A16B15924
   ## Test ERC20 Token - with USDC bridge fee ##
@@ -236,5 +236,3 @@ tokens:
 
 # STAGING #
 options: {}
-
-
