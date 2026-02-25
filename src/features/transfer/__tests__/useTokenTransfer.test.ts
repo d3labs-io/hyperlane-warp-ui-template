@@ -344,6 +344,30 @@ describe('useTokenTransfer', () => {
     );
   });
 
+  it('shows network connectivity message when RPC gas estimation fails due to network error', async () => {
+    const error = Object.assign(new Error('Missing or invalid parameters.'), {
+      name: 'EstimateGasExecutionError',
+      details: 'Network request failed',
+    });
+    sendTransactionMock.mockRejectedValue(error);
+
+    const { result } = renderHook(() => useTokenTransfer());
+
+    await act(async () => {
+      await result.current.triggerTransactions(values);
+    });
+
+    expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Unable to reach the network. If you are using a VPN or firewall, try disabling it. Otherwise, try enabling a VPN and attempt the transaction again.',
+      {
+        autoClose: 8000,
+        ariaLabel: 'Transfer Failed',
+        theme: 'colored',
+      },
+    );
+  });
+
   it('displays timeout message when confirmations timeout', async () => {
     const confirm = vi.fn().mockRejectedValue(new Error('timeout'));
     sendTransactionMock.mockResolvedValueOnce({ hash: '0xhash', confirm });
