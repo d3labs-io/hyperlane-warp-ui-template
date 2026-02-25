@@ -315,7 +315,15 @@ async function executeTransfer({
       errorDetailsExtended.includes('internalrpcerror') &&
       errorDetailsExtended.includes('internal error was received');
 
-    if (isInternalRpcErrorOnApprove) {
+    const isNetworkRequestFailed =
+      error?.name === 'EstimateGasExecutionError' && error?.details === 'Network request failed';
+
+    if (isNetworkRequestFailed) {
+      toast.error(
+        'Unable to reach the network. If you are using a VPN or firewall, try disabling it. Otherwise, try enabling a VPN and attempt the transaction again.',
+        ERROR_TOAST_OPTIONS,
+      );
+    } else if (isInternalRpcErrorOnApprove) {
       toast.error(
         'Network mismatch detected, switch wallet to the origin chain and try again.',
         ERROR_TOAST_OPTIONS,
