@@ -1,0 +1,22 @@
+diff --git a/node_modules/@wagmi/connectors/dist/esm/walletConnect.js b/node_modules/@wagmi/connectors/dist/esm/walletConnect.js
+index 9fd3bc8..91adb6c 100644
+--- a/node_modules/@wagmi/connectors/dist/esm/walletConnect.js
++++ b/node_modules/@wagmi/connectors/dist/esm/walletConnect.js
+@@ -151,11 +151,12 @@ export function walletConnect(parameters) {
+                     optionalChains,
+                     projectId: parameters.projectId,
+                     rpcMap: Object.fromEntries(config.chains.map((chain) => {
+-                        const [url] = extractRpcUrls({
+-                            chain,
+-                            transports: config.transports,
+-                        });
+-                        return [chain.id, url];
++                        // extractRpcUrls blindly picks chain.rpcUrls.default.http[0], which may
++                        // block CORS in browser (e.g. eth.llamarpc.com). Use WalletConnect's own
++                        // CORS-friendly RPC endpoint instead — it is already the SDK fallback when
++                        // no rpcMap is provided, so this is safe and always available.
++                        const wcRpcUrl = `https://rpc.walletconnect.org/v1/?chainId=eip155:${chain.id}&projectId=${parameters.projectId}`;
++                        return [chain.id, wcRpcUrl];
+                     })),
+                     showQrModal: parameters.showQrModal ?? true,
+                 });
