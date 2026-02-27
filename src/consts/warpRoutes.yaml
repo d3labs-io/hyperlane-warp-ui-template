@@ -96,7 +96,7 @@ tokens:
     connections:
       - token: ethereum|pruv|0xa367885CC6f620ba311E2588a1D386324da7494f
   ## SATE
-## GSF
+  ## GSF
   - chainName: pruv
     standard: EvmHypCollateral
     decimals: 6
