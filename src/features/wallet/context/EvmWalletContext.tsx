@@ -14,38 +14,13 @@ import {
   walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { PropsWithChildren, useMemo } from 'react';
-import { type Chain, createClient } from 'viem';
+import { createClient } from 'viem';
 import { WagmiProvider, createConfig } from 'wagmi';
 import { APP_NAME } from '../../../consts/app';
 import { config } from '../../../consts/config';
 import { Color } from '../../../styles/Color';
 import { useMultiProvider } from '../../chains/hooks';
-import { raceTransport } from '../../chains/rpcUtils';
-
-/**
- * Prepend WalletConnect's own CORS-friendly RPC endpoint as the first URL for
- * each chain. The WalletConnect connector picks `chain.rpcUrls.default.http[0]`
- * for its internal rpcMap — if that URL is CORS-blocked in the browser, any
- * read RPC call (eth_chainId, eth_estimateGas, …) through the WC provider
- * fails. WalletConnect's endpoint is always CORS-safe and available.
- *
- * The raceTransport fires all URLs in parallel, so adding one more has no
- * negative impact on latency.
- */
-function withWcRpcFirst(chains: Chain[], projectId: string): Chain[] {
-  return chains.map((chain) => {
-    const wcRpcUrl = `https://rpc.walletconnect.org/v1/?chainId=eip155:${chain.id}&projectId=${projectId}`;
-    return {
-      ...chain,
-      rpcUrls: {
-        ...chain.rpcUrls,
-        default: {
-          http: [wcRpcUrl, ...chain.rpcUrls.default.http],
-        },
-      },
-    };
-  });
-}
+import { raceTransport, withWcRpcFirst } from '../../chains/rpcUtils';
 
 function initWagmi(multiProvider: MultiProtocolProvider) {
   const rawChains = getWagmiChainConfigs(multiProvider);
