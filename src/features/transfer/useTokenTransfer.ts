@@ -12,8 +12,6 @@ import {
   useActiveChains,
   useTransactionFns,
 } from '@hyperlane-xyz/widgets';
-import { getPublicClient } from '@wagmi/core';
-import { BigNumber } from 'ethers';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
 import { type Config as WagmiConfig, useConfig } from 'wagmi';
@@ -21,6 +19,7 @@ import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
 import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
+import { preEstimateGasForEvmTxs } from '../chains/rpcUtils';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
@@ -241,30 +240,11 @@ async function executeTransfer({
       txs.unshift(usdcApprovalTx);
     }
 
-    // Pre-estimate gas for EVM transactions using the public client (with raceTransport).
-    // This avoids wagmi's internal gas estimation which routes through the WalletConnect
-    // connector client and may hit a CORS-blocked RPC endpoint.
+    // Pre-estimate gas via the CORS-resilient public client so wagmi doesn't
+    // attempt estimation through the WalletConnect connector's rpcMap.
     if (originProtocol === ProtocolType.Ethereum) {
       const chainId = multiProvider.getChainMetadata(origin).chainId as number;
-      for (const tx of txs) {
-        // Cast to ethers5 PopulatedTransaction since we've confirmed EVM protocol
-        const ethTx = tx.transaction as { to?: string; data?: string; value?: any; gasLimit?: any };
-        if (ethTx.gasLimit) continue; // already set by SDK
-        try {
-          const publicClient = getPublicClient(wagmiConfig, { chainId });
-          if (!publicClient) continue;
-          const gas = await publicClient.estimateGas({
-            account: sender as `0x${string}`,
-            to: ethTx.to as `0x${string}`,
-            data: ethTx.data as `0x${string}` | undefined,
-            value: ethTx.value ? BigInt(ethTx.value.toString()) : undefined,
-          });
-          // 20% buffer to account for estimation variance
-          ethTx.gasLimit = BigNumber.from((gas * 120n / 100n).toString());
-        } catch (e) {
-          logger.warn('Gas pre-estimation failed, wallet will estimate during signing', e);
-        }
-      }
+      await preEstimateGasForEvmTxs(wagmiConfig, chainId, sender, txs as any);
     }
 
     const hashes: string[] = [];
