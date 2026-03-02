@@ -66,7 +66,7 @@ jobs:
 
       - name: Build and Push Container
         run: |-
-          docker build -t hyperlane-warp .
+          docker build -t hyperlane-warp --build-arg SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }} .
           # git hash tagging
           # docker tag hyperlane-warp ${{ env.AR_URL }}/hyperlane-warp:${git_hash}
           # docker push ${{ env.AR_URL }}/hyperlane-warp:${git_hash}

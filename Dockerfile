@@ -16,6 +16,8 @@ RUN \
 FROM base AS builder
 WORKDIR /app
 ARG NEXT_PRIVATE_STANDALONE=true
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN \
