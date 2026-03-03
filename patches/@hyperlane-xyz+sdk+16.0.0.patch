@@ -40,14 +40,3 @@ index ba679ed..cc7873e 100644
          const originMetadata = this.multiProvider.getChainMetadata(originToken.chainName);
          const destinationMetadata = this.multiProvider.getChainMetadata(destination);
          // Check constant quotes first
-@@ -107,8 +113,9 @@ export class WarpCore {
-         }
-         // Form transactions to estimate local gas with
-         const recipient = convertToProtocolAddress(sender, destinationMetadata.protocol, destinationMetadata.bech32Prefix);
-+        const { amount: senderBalance } = await originToken.getBalance(this.multiProvider, sender);
-         const txs = await this.getTransferRemoteTxs({
--            originTokenAmount: originToken.amount(1),
-+            originTokenAmount: originToken.amount(senderBalance > 0n ? senderBalance : 1000000000n),
-             destination,
-             sender,
-             recipient,
