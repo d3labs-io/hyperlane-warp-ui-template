@@ -196,9 +196,7 @@ describe('preEstimateGasForEvmTxs', () => {
     const txs = [{ transaction: { to: '0xabc', value: BigNumber.from('1000') } as any }];
     await preEstimateGasForEvmTxs(mockConfig, 1, '0xsender', txs);
 
-    expect(mockEstimateGas).toHaveBeenCalledWith(
-      expect.objectContaining({ value: 1000n }),
-    );
+    expect(mockEstimateGas).toHaveBeenCalledWith(expect.objectContaining({ value: 1000n }));
   });
 
   test('logs warning and leaves gasLimit unset when estimation fails', async () => {
@@ -226,15 +224,10 @@ describe('preEstimateGasForEvmTxs', () => {
   });
 
   test('processes multiple transactions independently', async () => {
-    mockEstimateGas
-      .mockResolvedValueOnce(100_000n)
-      .mockRejectedValueOnce(new Error('fail'));
+    mockEstimateGas.mockResolvedValueOnce(100_000n).mockRejectedValueOnce(new Error('fail'));
     mockGetPublicClient.mockReturnValue({ estimateGas: mockEstimateGas } as any);
 
-    const txs = [
-      { transaction: { to: '0xabc' } as any },
-      { transaction: { to: '0xdef' } as any },
-    ];
+    const txs = [{ transaction: { to: '0xabc' } as any }, { transaction: { to: '0xdef' } as any }];
     await preEstimateGasForEvmTxs(mockConfig, 1, '0xsender', txs);
 
     expect(txs[0].transaction.gasLimit).toEqual(BigNumber.from('120000'));
