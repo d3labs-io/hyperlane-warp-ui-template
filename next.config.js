@@ -58,6 +58,18 @@ const securityHeaders = [
     key: 'Referrer-Policy',
     value: 'strict-origin-when-cross-origin',
   },
+  {
+    key: 'Cross-Origin-Opener-Policy',
+    value: 'same-origin-allow-popups',
+  },
+  {
+    key: 'Cross-Origin-Embedder-Policy',
+    value: 'unsafe-none',
+  },
+  {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'self' https://*.walletconnect.com https://*.walletconnect.org",
+  },
   // Note, causes a problem for firefox: https://github.com/MetaMask/metamask-extension/issues/3133
   ...(ENABLE_CSP_HEADER
     ? [
@@ -112,6 +124,7 @@ const nextConfig = {
 };
 
 const sentryOptions = {
+  url: 'https://sentry.pruv.finance',
   org: 'd3labs',
   project: 'pruv-bridge-web',
   authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -130,4 +143,7 @@ const sentryOptions = {
   },
 };
 
-module.exports = withBundleAnalyzer(withSentryConfig(nextConfig, sentryOptions));
+const baseConfig = withBundleAnalyzer(nextConfig);
+module.exports = process.env.SENTRY_AUTH_TOKEN
+  ? withBundleAnalyzer(withSentryConfig(nextConfig, sentryOptions))
+  : baseConfig;
