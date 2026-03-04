@@ -137,7 +137,8 @@ const sentryOptions = {
     excludeReplayShadowDom: true,
   },
   sourcemaps: {
-    disable: false,
+    disable: true,
+    assets: ['**/*.js', '**/*.js.map'],
     ignore: ['**/node_modules/**'],
     deleteSourcemapsAfterUpload: true,
   },
