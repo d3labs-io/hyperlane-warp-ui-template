@@ -63,8 +63,8 @@ tokens:
     decimals: 6
     symbol: USDT
     name: Tether USD
-    addressOrDenom: "0x49D12edcDb5E35F90dc0F8f469e73Eef3a65Be86"
-    collateralAddressOrDenom: "0xd077a400968890eacc75cdc901f0356c943e4fdb"
+    addressOrDenom: '0x49D12edcDb5E35F90dc0F8f469e73Eef3a65Be86'
+    collateralAddressOrDenom: '0xd077a400968890eacc75cdc901f0356c943e4fdb'
     connections:
       - token: ethereum|pruv|0xF8158CC824E5794fc35e31D777476e98b51498C0
     logoURI: /images/tokens/USDT/logo.svg
