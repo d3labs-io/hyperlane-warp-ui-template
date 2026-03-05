@@ -119,8 +119,8 @@ tokens:
     standard: EvmHypSynthetic
     decimals: 6
     symbol: GSF
-    name: "Garuda Sports Fund "
-    addressOrDenom: "0xF8158CC824E5794fc35e31D777476e98b51498C0"
+    name: 'Garuda Sports Fund '
+    addressOrDenom: '0xF8158CC824E5794fc35e31D777476e98b51498C0'
     connections:
       - token: ethereum|pruv|0x3E8b4A5050B54D648993a2B15f76B415A34A9c9F
 ## GSF
