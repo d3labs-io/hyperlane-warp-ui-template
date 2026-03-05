@@ -58,7 +58,6 @@ tokens:
     connections:
       - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
     logoURI: /images/tokens/USDT/logo.svg
-    
   - chainName: bsctestnet
     standard: EvmHypCollateral
     decimals: 18
