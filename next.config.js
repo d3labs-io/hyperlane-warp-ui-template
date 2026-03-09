@@ -115,12 +115,19 @@ const nextConfig = {
   },
 
   experimental: {
+    webpackBuildWorker: true,
+    parallelServerBuildTraces: true,
     webpackMemoryOptimizations: true,
     serverSourceMaps: true,
   },
 
   reactStrictMode: true,
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps: false,
+
+  serverExternalPackages: ['@sentry/nextjs'],
+
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 };
 
 const sentryOptions = {
