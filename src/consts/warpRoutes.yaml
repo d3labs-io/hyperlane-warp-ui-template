@@ -41,8 +41,8 @@ tokens:
     decimals: 6
     symbol: USDC
     name: USD Coin
-    addressOrDenom: "0xf00675f5AEC94b0D987cb5D35545304c68A06f12"
-    collateralAddressOrDenom: "0x5425890298aed601595a70AB815c96711a31Bc65"
+    addressOrDenom: '0xf00675f5AEC94b0D987cb5D35545304c68A06f12'
+    collateralAddressOrDenom: '0x5425890298aed601595a70AB815c96711a31Bc65'
     connections:
       - token: ethereum|pruvtest|0xA231111ad6755C06854ca1C8636CDdC101f05243
     logoURI: /images/tokens/USDC/logo.svg
