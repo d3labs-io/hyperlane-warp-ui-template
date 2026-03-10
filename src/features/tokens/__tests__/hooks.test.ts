@@ -1,7 +1,13 @@
 import type { Token, WarpCore } from '@hyperlane-xyz/sdk';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getIndexForToken, getTokenByIndex, useTokens, useWarpCore } from '../hooks';
+import {
+  getIndexForToken,
+  getTokenByIndex,
+  getTokenIndexFromChains,
+  useTokens,
+  useWarpCore,
+} from '../hooks';
 
 // Mock tokens for testing
 const mockTokens: Token[] = [
@@ -125,30 +131,36 @@ describe('Token Hooks', () => {
   });
 
   describe('getTokenIndexFromChains', () => {
-    it('returns the correct index when token is found in route', () => {
-      mockWarpCore.getTokensForRoute?.mockReturnValueOnce([mockTokens[0]]); // only one token in route
-      const index = (() => {
-        const tokensWithRoute = mockWarpCore.getTokensForRoute?.('chain1', 'chain2') || [];
-        const queryToken = tokensWithRoute.find((token) => token.addressOrDenom === '0xtoken1');
-        if (queryToken) return getIndexForToken(mockWarpCore as WarpCore, queryToken);
-        else if (tokensWithRoute.length === 1)
-          return getIndexForToken(mockWarpCore as WarpCore, tokensWithRoute[0]);
-        return undefined;
-      })();
+    it('returns the correct index when addressOrDenom matches a token in the route', () => {
+      mockWarpCore.getTokensForRoute.mockReturnValueOnce([mockTokens[0]]);
+      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, '0xtoken1', 'chain1', 'chain2');
       expect(index).toBe(0);
     });
-    it('returns undefined when multiple tokens are in route and no match', () => {
-      mockWarpCore.getTokensForRoute.mockReturnValueOnce([...mockTokens]); // multiple tokens in route
-      const index = (() => {
-        const tokensWithRoute = mockWarpCore.getTokensForRoute?.('chain1', 'chain2') || [];
-        const queryToken = tokensWithRoute.find(
-          (token) => token.addressOrDenom === '0xnonexistent',
-        );
-        if (queryToken) return getIndexForToken(mockWarpCore as WarpCore, queryToken);
-        else if (tokensWithRoute.length === 1)
-          return getIndexForToken(mockWarpCore as WarpCore, tokensWithRoute[0]);
-        return undefined;
-      })();
+
+    it('auto-selects when there is exactly one token on the route and addressOrDenom is null', () => {
+      mockWarpCore.getTokensForRoute.mockReturnValueOnce([mockTokens[0]]);
+      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, null, 'chain1', 'chain2');
+      expect(index).toBe(0);
+    });
+
+    it('returns undefined when multiple tokens are on the route and addressOrDenom is null', () => {
+      // Mirrors the bug: kairos->pruvtest has both USDT and MOCKRWA
+      mockWarpCore.getTokensForRoute.mockReturnValueOnce([...mockTokens]);
+      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, null, 'chain1', 'chain2');
+      expect(index).toBeUndefined();
+    });
+
+    it('returns the correct index when multiple tokens are on the route but addressOrDenom matches one', () => {
+      // Mirrors the fix: swap button passes destinationToken.addressOrDenom so the
+      // correct token is identified even when multiple tokens share the same route
+      mockWarpCore.getTokensForRoute.mockReturnValueOnce([...mockTokens]);
+      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, '0xtoken2', 'chain1', 'chain2');
+      expect(index).toBe(1);
+    });
+
+    it('returns undefined when addressOrDenom does not match any token in the route', () => {
+      mockWarpCore.getTokensForRoute.mockReturnValueOnce([...mockTokens]);
+      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, '0xnonexistent', 'chain1', 'chain2');
       expect(index).toBeUndefined();
     });
   });
