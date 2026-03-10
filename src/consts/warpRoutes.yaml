@@ -14,6 +14,7 @@ tokens:
     connections:
       - token: ethereum|arbitrumsepolia|0xf04197995509E34d6e17c9F7Cc57fCCe8673825a
       - token: ethereum|sepolia|0xDccdE646A3dd411cCE613c36E9ed098E0622E784
+      - token: ethereum|avalanchefuji|0xf00675f5AEC94b0D987cb5D35545304c68A06f12
     logoURI: /images/tokens/USDC/logo.svg
   - chainName: arbitrumsepolia
     standard: EvmHypCollateral
@@ -32,6 +33,16 @@ tokens:
     name: USD Coin
     addressOrDenom: '0xDccdE646A3dd411cCE613c36E9ed098E0622E784'
     collateralAddressOrDenom: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
+    connections:
+      - token: ethereum|pruvtest|0xA231111ad6755C06854ca1C8636CDdC101f05243
+    logoURI: /images/tokens/USDC/logo.svg
+  - chainName: avalanchefuji
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: USDC
+    name: USD Coin
+    addressOrDenom: "0xf00675f5AEC94b0D987cb5D35545304c68A06f12"
+    collateralAddressOrDenom: "0x5425890298aed601595a70AB815c96711a31Bc65"
     connections:
       - token: ethereum|pruvtest|0xA231111ad6755C06854ca1C8636CDdC101f05243
     logoURI: /images/tokens/USDC/logo.svg
