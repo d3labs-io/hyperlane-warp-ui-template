@@ -133,7 +133,12 @@ describe('Token Hooks', () => {
   describe('getTokenIndexFromChains', () => {
     it('returns the correct index when addressOrDenom matches a token in the route', () => {
       mockWarpCore.getTokensForRoute.mockReturnValueOnce([mockTokens[0]]);
-      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, '0xtoken1', 'chain1', 'chain2');
+      const index = getTokenIndexFromChains(
+        mockWarpCore as WarpCore,
+        '0xtoken1',
+        'chain1',
+        'chain2',
+      );
       expect(index).toBe(0);
     });
 
@@ -154,13 +159,23 @@ describe('Token Hooks', () => {
       // Mirrors the fix: swap button passes destinationToken.addressOrDenom so the
       // correct token is identified even when multiple tokens share the same route
       mockWarpCore.getTokensForRoute.mockReturnValueOnce([...mockTokens]);
-      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, '0xtoken2', 'chain1', 'chain2');
+      const index = getTokenIndexFromChains(
+        mockWarpCore as WarpCore,
+        '0xtoken2',
+        'chain1',
+        'chain2',
+      );
       expect(index).toBe(1);
     });
 
     it('returns undefined when addressOrDenom does not match any token in the route', () => {
       mockWarpCore.getTokensForRoute.mockReturnValueOnce([...mockTokens]);
-      const index = getTokenIndexFromChains(mockWarpCore as WarpCore, '0xnonexistent', 'chain1', 'chain2');
+      const index = getTokenIndexFromChains(
+        mockWarpCore as WarpCore,
+        '0xnonexistent',
+        'chain1',
+        'chain2',
+      );
       expect(index).toBeUndefined();
     });
   });
