@@ -3,126 +3,247 @@
 # The input here is typically the output of the Hyperlane CLI warp deploy command
 ---
 tokens:
-  ## USDC
-  - chainName: pruv
+  # STAGING #
+  - chainName: pruvtest
     standard: EvmHypCollateralFiat
     decimals: 6
     symbol: USDC
     name: USD Coin
-    addressOrDenom: '0x261F1088850b7d3E404B399D970b8c3841F4aCa5'
-    collateralAddressOrDenom: '0xae2205D95520A80D0B380678b6BECf0566457B7E'
+    addressOrDenom: '0xA231111ad6755C06854ca1C8636CDdC101f05243'
+    collateralAddressOrDenom: '0xeCacC484026a02022565496E088CA0581cC36373'
     connections:
-      - token: ethereum|polygon|0x337Bc46c620d69FB0426Ee5d182B8762E32E4fc5
-      - token: ethereum|ethereum|0xb0033665Fc09aC63b3D1E8DDEa809A6bD2dFAF97
+      - token: ethereum|arbitrumsepolia|0xf04197995509E34d6e17c9F7Cc57fCCe8673825a
+      - token: ethereum|sepolia|0xDccdE646A3dd411cCE613c36E9ed098E0622E784
+      - token: ethereum|avalanchefuji|0xf00675f5AEC94b0D987cb5D35545304c68A06f12
     logoURI: /images/tokens/USDC/logo.svg
-  - chainName: polygon
+  - chainName: arbitrumsepolia
     standard: EvmHypCollateral
     decimals: 6
     symbol: USDC
     name: USD Coin
-    addressOrDenom: '0x337Bc46c620d69FB0426Ee5d182B8762E32E4fc5'
-    collateralAddressOrDenom: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'
+    addressOrDenom: '0xf04197995509E34d6e17c9F7Cc57fCCe8673825a'
+    collateralAddressOrDenom: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d'
     connections:
-      - token: ethereum|pruv|0x261F1088850b7d3E404B399D970b8c3841F4aCa5
+      - token: ethereum|pruvtest|0xA231111ad6755C06854ca1C8636CDdC101f05243
     logoURI: /images/tokens/USDC/logo.svg
-  - chainName: ethereum
+  - chainName: sepolia
     standard: EvmHypCollateral
     decimals: 6
     symbol: USDC
     name: USD Coin
-    addressOrDenom: '0xb0033665Fc09aC63b3D1E8DDEa809A6bD2dFAF97'
-    collateralAddressOrDenom: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    addressOrDenom: '0xDccdE646A3dd411cCE613c36E9ed098E0622E784'
+    collateralAddressOrDenom: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
     connections:
-      - token: ethereum|pruv|0x261F1088850b7d3E404B399D970b8c3841F4aCa5
+      - token: ethereum|pruvtest|0xA231111ad6755C06854ca1C8636CDdC101f05243
     logoURI: /images/tokens/USDC/logo.svg
-  ## USDC
-  ## USDT
-  - chainName: pruv
+  - chainName: avalanchefuji
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: USDC
+    name: USD Coin
+    addressOrDenom: '0xf00675f5AEC94b0D987cb5D35545304c68A06f12'
+    collateralAddressOrDenom: '0x5425890298aed601595a70AB815c96711a31Bc65'
+    connections:
+      - token: ethereum|pruvtest|0xA231111ad6755C06854ca1C8636CDdC101f05243
+    logoURI: /images/tokens/USDC/logo.svg
+  ## USDT ##
+  - chainName: pruvtest
     standard: EvmHypCollateralFiat
     decimals: 6
     symbol: USDT
     name: Tether USD
-    addressOrDenom: '0xF8158CC824E5794fc35e31D777476e98b51498C0'
-    collateralAddressOrDenom: '0x0c88A80A4bE4E5806C90f849e0bc46DE67fd6900'
+    addressOrDenom: '0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592'
+    collateralAddressOrDenom: '0xc547f385c7D0A50Bb4b4889dF4d863F0abAD2885'
     connections:
-      - token: ethereum|bsc|0xeCFF040e761159f18Bc171C9F05FCCd4d76Aa588
+      - token: ethereum|bsctestnet|0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f
+      - token: ethereum|kairos|0x8fe41adb2890df3d591160052fb0e502e4f07f11
+    #      - token: ethereum|sepolia|0xfd999e47416E52D0E2e6EE080f4E0988B645f0da
     logoURI: /images/tokens/USDT/logo.svg
-  - chainName: bsc
+  - chainName: kairos
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: USDT
+    name: USDT Token
+    addressOrDenom: '0x8fe41adb2890df3d591160052fb0e502e4f07f11'
+    collateralAddressOrDenom: '0xd077A400968890Eacc75cdc901F0356c943e4fDb'
+    connections:
+      - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
+    logoURI: /images/tokens/USDT/logo.svg
+  - chainName: bsctestnet
     standard: EvmHypCollateral
     decimals: 18
     symbol: USDT
-    name: Tether USD
-    addressOrDenom: '0xeCFF040e761159f18Bc171C9F05FCCd4d76Aa588'
-    collateralAddressOrDenom: '0x55d398326f99059fF775485246999027B3197955'
+    name: USDT Token
+    addressOrDenom: '0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f'
+    collateralAddressOrDenom: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd'
     connections:
-      - token: ethereum|pruv|0xF8158CC824E5794fc35e31D777476e98b51498C0
+      - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
+    #      - token: ethereum|sepolia|0xfd999e47416E52D0E2e6EE080f4E0988B645f0da
     logoURI: /images/tokens/USDT/logo.svg
-  ## USDT
-  ## GSP
-  - chainName: pruv
+  #  - chainName: sepolia
+  #    standard: EvmHypCollateral
+  #    decimals: 6
+  #    symbol: USDT
+  #    name: Tether USD
+  #    addressOrDenom: '0xfd999e47416E52D0E2e6EE080f4E0988B645f0da'
+  #    collateralAddressOrDenom: '0xdF0C57f2649AEF8f45Ba1e696ACc21398cDC0f76'
+  #    connections:
+  #      - token: ethereum|pruvtest|0xe0F0A2D91ca9a3db5635048f8b2be4A016bBa592
+  #      - token: ethereum|bsctestnet|0x3e6623b0A67CbFfaa4ac6C681bA90d8D1ac20C2f
+  #    logoURI: /images/tokens/USDT/logo.svg
+  ## USDT ##
+  ## Test ERC20 Token - with USDC bridge fee ##
+  - chainName: pruvtest
     standard: EvmHypCollateral
-    decimals: 6
-    symbol: GSP
-    name: Garuda Sports Group
-    addressOrDenom: '0x92e3582717B09462E4Aa01203a89BB176283C20c'
-    collateralAddressOrDenom: '0x8f038c1ee8fcb6c70b1d103a3b9cefd4d6401998'
+    decimals: 18
+    symbol: MOCKRWA
+    name: MockRWAToken
+    addressOrDenom: '0x8188BFf405025BaA02b09c7524e73E3A16B15924'
+    collateralAddressOrDenom: '0x4A1FDad497Ac84b657Ac4D0b23aeD440B4b1Fe44'
     connections:
-      - token: ethereum|mantapacific|0xFB13Ad8c286025E1874D631bC62EAde352f05d33
-  - chainName: mantapacific
+      - token: ethereum|arbitrumsepolia|0x4C89e71cbcFA162AA678E73e7BF6dd3Eb475839e
+      - token: ethereum|sepolia|0x61aFa69a38ec4A252897259BA6C8322120B13C30
+      - token: ethereum|kairos|0x48571Fd3f8d6c25A4e00fb03a9D951EDF024A9a7
+  - chainName: arbitrumsepolia
     standard: EvmHypSynthetic
-    decimals: 6
-    symbol: GSP
-    name: Garuda Sports Group
-    addressOrDenom: '0xFB13Ad8c286025E1874D631bC62EAde352f05d33'
+    decimals: 18
+    symbol: MOCKRWA
+    name: MockRWAToken
+    addressOrDenom: '0x4C89e71cbcFA162AA678E73e7BF6dd3Eb475839e'
     connections:
-      - token: ethereum|pruv|0x92e3582717B09462E4Aa01203a89BB176283C20c
-  ## GSP
-  ## SATE
-  - chainName: pruv
-    standard: EvmHypCollateral
-    decimals: 6
-    symbol: SATE
-    name: SATEYIELD
-    addressOrDenom: '0xa367885CC6f620ba311E2588a1D386324da7494f'
-    collateralAddressOrDenom: '0xf6b62398F48943b0BAfB441CCD277ED64524FC88'
-    connections:
-      - token: ethereum|bsc|0x4cA9D17b3F69AF58506B78F2B0EdEEFdcFb86354
-  - chainName: bsc
+      - token: ethereum|pruvtest|0x8188BFf405025BaA02b09c7524e73E3A16B15924
+  #      - token: ethereum|sepolia|0x61aFa69a38ec4A252897259BA6C8322120B13C30
+  - chainName: sepolia
     standard: EvmHypSynthetic
-    decimals: 6
-    symbol: SATE
-    name: SATEYIELD
-    addressOrDenom: '0x4cA9D17b3F69AF58506B78F2B0EdEEFdcFb86354'
+    decimals: 18
+    symbol: MOCKRWA
+    name: MockRWAToken
+    addressOrDenom: '0x61aFa69a38ec4A252897259BA6C8322120B13C30'
     connections:
-      - token: ethereum|pruv|0xa367885CC6f620ba311E2588a1D386324da7494f
-  ## SATE
-  ## GSF
-  - chainName: pruv
-    standard: EvmHypCollateral
-    decimals: 6
-    symbol: GSF
-    name: 'Garuda Sports Fund '
-    addressOrDenom: '0x3E8b4A5050B54D648993a2B15f76B415A34A9c9F'
-    collateralAddressOrDenom: '0x61e888dca318affa03ae5966f7a675861cc7a7f4'
-    connections:
-      - token: ethereum|ethereum|0xD35C3a284F29274DAA5a32148aE0E2F69c420fba
-      - token: ethereum|polygon|0xF8158CC824E5794fc35e31D777476e98b51498C0
-  - chainName: ethereum
+      - token: ethereum|pruvtest|0x8188BFf405025BaA02b09c7524e73E3A16B15924
+  #      - token: ethereum|arbitrumsepolia|0x4C89e71cbcFA162AA678E73e7BF6dd3Eb475839e
+  - chainName: kairos
     standard: EvmHypSynthetic
-    decimals: 6
-    symbol: GSF
-    name: 'Garuda Sports Fund '
-    addressOrDenom: '0xD35C3a284F29274DAA5a32148aE0E2F69c420fba'
+    decimals: 18
+    symbol: MOCKRWA
+    name: MockRWAToken
+    addressOrDenom: '0x48571Fd3f8d6c25A4e00fb03a9D951EDF024A9a7'
     connections:
-      - token: ethereum|pruv|0x3E8b4A5050B54D648993a2B15f76B415A34A9c9F
-  - chainName: polygon
-    standard: EvmHypSynthetic
-    decimals: 6
-    symbol: GSF
-    name: 'Garuda Sports Fund '
-    addressOrDenom: '0xF8158CC824E5794fc35e31D777476e98b51498C0'
-    connections:
-      - token: ethereum|pruv|0x3E8b4A5050B54D648993a2B15f76B415A34A9c9F
-## GSF
+      - token: ethereum|pruvtest|0x8188BFf405025BaA02b09c7524e73E3A16B15924
+  ## Test ERC20 Token - with USDC bridge fee ##
 
+  ## tt10
+  - addressOrDenom: '0x974e193fC63B8A9E837783D0612D3884803fdf9C'
+    chainName: pruvtest
+    collateralAddressOrDenom: '0x4b6889790D212f80B54AeA7410B044cB277Bf498'
+    connections:
+      - token: ethereum|bsctestnet|0x4B1335f619A797eA5Bb7E91B87a81Cc3c9C8322B
+      - token: ethereum|arbitrumsepolia|0xd63bB5Eb4EF3C2868EAbe4cEb9402ecdA5660Adc
+      - token: ethereum|sepolia|0x2d904Ee22F34000611b9230140A3f3eB98c66444
+    decimals: 6
+    name: test token 10
+    standard: EvmHypCollateral
+    symbol: tt10
+  - addressOrDenom: '0x4B1335f619A797eA5Bb7E91B87a81Cc3c9C8322B'
+    chainName: bsctestnet
+    connections:
+      - token: ethereum|pruvtest|0x974e193fC63B8A9E837783D0612D3884803fdf9C
+    decimals: 6
+    name: test token 10
+    standard: EvmHypSynthetic
+    symbol: tt10
+  - addressOrDenom: '0xd63bB5Eb4EF3C2868EAbe4cEb9402ecdA5660Adc'
+    chainName: arbitrumsepolia
+    connections:
+      - token: ethereum|pruvtest|0x974e193fC63B8A9E837783D0612D3884803fdf9C
+    decimals: 6
+    name: test token 10
+    standard: EvmHypSynthetic
+    symbol: tt10
+  - addressOrDenom: '0x2d904Ee22F34000611b9230140A3f3eB98c66444'
+    chainName: sepolia
+    connections:
+      - token: ethereum|pruvtest|0x974e193fC63B8A9E837783D0612D3884803fdf9C
+    decimals: 6
+    name: test token 10
+    standard: EvmHypSynthetic
+    symbol: tt10
+  ## tt10
+  ## tt20
+  - addressOrDenom: '0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58'
+    chainName: pruvtest
+    collateralAddressOrDenom: '0x00cfbE0561E70a75a3f67Aa752aFBEa04d394A9d'
+    connections:
+      - token: ethereum|arbitrumsepolia|0xC19aBaeeBd0cF0Aa357D70544475a07602fdb1F9
+      - token: ethereum|bsctestnet|0x3E31914d81803bC786f1aD2C0c1B78A82d787730
+      - token: ethereum|sepolia|0x77791fF1BfA12F62E2C5dF1C1314D1de1a1F8ac0
+    decimals: 6
+    name: test token 20
+    standard: EvmHypCollateral
+    symbol: tt20
+  - addressOrDenom: '0xC19aBaeeBd0cF0Aa357D70544475a07602fdb1F9'
+    chainName: arbitrumsepolia
+    connections:
+      - token: ethereum|pruvtest|0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58
+    decimals: 6
+    name: test token 20
+    standard: EvmHypSynthetic
+    symbol: tt20
+  - addressOrDenom: '0x3E31914d81803bC786f1aD2C0c1B78A82d787730'
+    chainName: bsctestnet
+    connections:
+      - token: ethereum|pruvtest|0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58
+    decimals: 6
+    name: test token 20
+    standard: EvmHypSynthetic
+    symbol: tt20
+  - addressOrDenom: '0x77791fF1BfA12F62E2C5dF1C1314D1de1a1F8ac0'
+    chainName: sepolia
+    connections:
+      - token: ethereum|pruvtest|0x121764FAF3ecf9a1D7006B7a9ce8D27a6D764b58
+    decimals: 6
+    name: test token 20
+    standard: EvmHypSynthetic
+    symbol: tt20
+  ## tt20
+  ## GSPPP
+  - chainName: pruvtest
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: GSPPP
+    name: Garuda Sport Funddd
+    addressOrDenom: '0x114F013cABE6B8B25d1c63EC58a9cd946C7186b1'
+    collateralAddressOrDenom: '0xf78b16bbc8a3ef47c0c289c171082c5532f42513'
+    connections:
+      - token: ethereum|sepolia|0x76Eb93B5Bd10b742896E386662F19C3d4BD38EB4
+  - chainName: sepolia
+    standard: EvmHypSynthetic
+    decimals: 6
+    symbol: GSPPP
+    name: Garuda Sport Funddd
+    addressOrDenom: '0x76Eb93B5Bd10b742896E386662F19C3d4BD38EB4'
+    connections:
+      - token: ethereum|pruvtest|0x114F013cABE6B8B25d1c63EC58a9cd946C7186b1
+  ## GSPPP
+  ## MMF
+  - chainName: pruvtest
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: MMF
+    name: MMF
+    addressOrDenom: '0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E'
+    collateralAddressOrDenom: '0xe4eaa3e1b84625cc7ab92abb2bd4fb0b2d1767cc'
+    connections:
+      - token: ethereum|sepolia|0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa
+  - chainName: sepolia
+    standard: EvmHypSynthetic
+    decimals: 6
+    symbol: MMF
+    name: MMF
+    addressOrDenom: '0xb3EDfCa4aEE2D9660FB6f61cf37F56A1bb394bfa'
+    connections:
+      - token: ethereum|pruvtest|0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E
+  ## MMF
+
+# STAGING #
 options: {}

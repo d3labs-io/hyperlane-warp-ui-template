@@ -118,7 +118,7 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     webpackMemoryOptimizations: true,
-    serverSourceMaps: true,
+    serverSourceMaps: false,
   },
 
   reactStrictMode: true,
@@ -131,7 +131,6 @@ const nextConfig = {
 };
 
 const sentryOptions = {
-  url: 'https://sentry.pruv.finance',
   org: 'd3labs',
   project: 'pruv-bridge-web',
   authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -151,7 +150,4 @@ const sentryOptions = {
   },
 };
 
-const baseConfig = withBundleAnalyzer(nextConfig);
-module.exports = process.env.SENTRY_AUTH_TOKEN
-  ? withBundleAnalyzer(withSentryConfig(nextConfig, sentryOptions))
-  : baseConfig;
+module.exports = withBundleAnalyzer(withSentryConfig(nextConfig, sentryOptions));

@@ -18,195 +18,190 @@
 #   protocol: ethereum
 #   rpcUrls:
 #     - http: http://127.0.0.1:8555
-pruv:
-  # yaml-language-server: $schema=../schema.json
+pruvtest:
+  chainId: 7336
+  domainId: 7336
+  name: pruvtest
+  displayName: Pruv Testnet
+  protocol: ethereum
+  isTestnet: true
+  logoURI: /images/chains/pruvtest/logo.svg
+  rpcUrls:
+    - http: https://rpc.testnet.pruv.network
   blockExplorers:
-    - apiKey: ''
-      apiUrl: https://explorer.pruv.network/api
+    - name: Pruv Testnet Explorer
+      url: https://explorer.testnet.pruv.network
+      apiUrl: https://explorer.testnet.pruv.network
       family: blockscout
-      name: PruvExplorer
-      url: https://explorer.pruv.network/
-  chainId: 7337
-  displayName: Pruv
-  domainId: 7337
-  logoURI: /images/chains/pruv/logo.svg
-  isTestnet: false
-  name: pruv
   nativeToken:
-    decimals: 18
-    name: Pruv
+    name: Pruv Token
     symbol: PRUV
-  protocol: ethereum
-  rpcUrls:
-    - http: https://rpc.pruv.network/
-  technicalStack: other
-polygon:
-  blockExplorers:
-    - apiKey: GP69JEAP2W7YFJT9ZJTEPGQT6Y6KMW44ZN
-      apiUrl: https://api.etherscan.io/v2/api?chainid=137
-      family: etherscan
-      name: PolygonScan
-      url: https://polygonscan.com
-  blocks:
-    confirmations: 3
-    estimateBlockTime: 2
-    reorgPeriod: finalized
-  chainId: 137
-  deployer:
-    name: Abacus Works
-    url: https://www.hyperlane.xyz
-  displayName: Polygon
-  domainId: 137
-  gasCurrencyCoinGeckoId: polygon-ecosystem-token
-  gnosisSafeTransactionServiceUrl: https://safe-transaction-polygon.safe.global/
-  logoURI: /images/chains/polygon/logo.svg
-  name: polygon
-  nativeToken:
     decimals: 18
-    name: Polygon Ecosystem Token
-    symbol: POL
-  protocol: ethereum
-  rpcUrls:
-    - http: https://polygon-bor.publicnode.com
-    - http: https://polygon-rpc.com
-    - http: https://polygon.drpc.org
-    - http: https://polygon-pokt.nodies.app
-  technicalStack: other
-ethereum:
-  # yaml-language-server: $schema=../schema.json
+arbitrumsepolia:
   blockExplorers:
-    - apiKey: GP69JEAP2W7YFJT9ZJTEPGQT6Y6KMW44ZN
-      apiUrl: https://api.etherscan.io/v2/api?chainid=1
+    - apiKey: QAI5SWBNHJSFAN6KMS9RC5JGFKV2IYD2Z5
+      apiUrl: https://api-sepolia.arbiscan.io/api
       family: etherscan
-      name: Etherscan
-      url: https://etherscan.io
-    - apiUrl: https://eth.blockscout.com/api
-      family: blockscout
-      name: Blockscout
-      url: https://blockscout.com/eth/mainnet
-    - apiUrl: https://api.routescan.io/v2/network/mainnet/evm/1/etherscan/api
-      family: routescan
-      name: Ethereum Explorer
-      url: https://1.routescan.io
+      name: Arbiscan
+      url: https://sepolia.arbiscan.io
   blocks:
-    confirmations: 2
-    estimateBlockTime: 13
-    reorgPeriod: 15
-  chainId: 1
-  deployer:
-    name: Abacus Works
-    url: https://www.hyperlane.xyz
-  displayName: Ethereum
-  domainId: 1
+    confirmations: 1
+    estimateBlockTime: 3
+    reorgPeriod: 0
+  chainId: 421614
+  displayName: Arbitrum Sepolia
+  domainId: 421614
+  logoURI: /images/chains/arbitrumsepolia/logo.svg
   gasCurrencyCoinGeckoId: ethereum
-  gnosisSafeTransactionServiceUrl: https://safe-transaction-mainnet.safe.global/
-  logoURI: /images/chains/ethereum/logo.svg
-  name: ethereum
+  index:
+    from: 49690504 # Index of Mailbox deployment, nitro specific
+  isTestnet: true
+  name: arbitrumsepolia
   nativeToken:
     decimals: 18
     name: Ether
     symbol: ETH
   protocol: ethereum
   rpcUrls:
-    - http: https://eth.llamarpc.com
-    - http: https://ethereum.publicnode.com
-    - http: https://eth.drpc.org
-    - http: https://rpc.flashbots.net
-    - http: https://eth.blockrazor.xyz
-    - http: https://eth-pokt.nodies.app
-  technicalStack: other
-bsc:
+    - http: https://arbitrum-sepolia.drpc.org
+    - http: https://arbitrum-sepolia.gateway.tenderly.co
+    - http: https://sepolia-rollup.arbitrum.io/rpc
+  technicalStack: arbitrumnitro
+sepolia:
+  # yaml-language-server: $schema=../schema.json
   blockExplorers:
-    - apiKey: GP69JEAP2W7YFJT9ZJTEPGQT6Y6KMW44ZN
-      apiUrl: https://api.etherscan.io/v2/api?chainid=56
+    - apiKey: CYUPN3Q66JIMRGQWYUDXJKQH4SX8YIYZMW
+      apiUrl: https://api-sepolia.etherscan.io/api
+      family: etherscan
+      name: Etherscan
+      url: https://sepolia.etherscan.io
+  blocks:
+    confirmations: 1
+    estimateBlockTime: 13
+    reorgPeriod: 2
+  chainId: 11155111
+  displayName: Sepolia
+  domainId: 11155111
+  logoURI: /images/chains/sepolia/logo.svg
+  gasCurrencyCoinGeckoId: ethereum
+  gnosisSafeTransactionServiceUrl: https://safe-transaction-sepolia.safe.global
+  isTestnet: true
+  name: sepolia
+  nativeToken:
+    decimals: 18
+    name: Ether
+    symbol: ETH
+  protocol: ethereum
+  rpcUrls:
+    - http: https://ethereum-sepolia.publicnode.com
+    - http: https://gateway.tenderly.co/public/sepolia
+    - http: https://sepolia.drpc.org
+    - http: https://1rpc.io/sepolia
+mantapacifictestnet:
+  blockExplorers:
+    - apiUrl: https://pacific-explorer.sepolia-testnet.manta.network/api
+      family: blockscout
+      name: Manta Sepolia Explorer
+      url: https://pacific-explorer.sepolia-testnet.manta.network
+  chainId: 3441006
+  deployer:
+    name: JaunePomme
+    url: https://github.com/JaunePomme
+  displayName: Manta Testnet
+  domainId: 3441006
+  isTestnet: true
+  logoURI: /images/chains/mantapacifictestnet/logo.svg
+  name: mantapacifictestnet
+  nativeToken:
+    decimals: 18
+    name: Ether
+    symbol: ETH
+  protocol: ethereum
+  rpcUrls:
+    - http: https://pacific-rpc.sepolia-testnet.manta.network/http
+bsctestnet:
+  blockExplorers:
+    - apiKey: CYUPN3Q66JIMRGQWYUDXJKQH4SX8YIYZMW
+      apiUrl: https://api-testnet.bscscan.com/api
       family: etherscan
       name: BscScan
-      url: https://bscscan.com
+      url: https://testnet.bscscan.com
   blocks:
     confirmations: 1
     estimateBlockTime: 3
-    reorgPeriod: finalized
-  chainId: 56
+    reorgPeriod: 9
+  chainId: 97
   deployer:
     name: Abacus Works
     url: https://www.hyperlane.xyz
-  displayName: Binance Smart Chain
-  displayNameShort: Binance
-  domainId: 56
+  displayName: BSC Testnet
+  domainId: 97
   gasCurrencyCoinGeckoId: binancecoin
-  gnosisSafeTransactionServiceUrl: https://safe-transaction-bsc.safe.global/
-  logoURI: /images/chains/bsc/logo.svg
-  name: bsc
+  isTestnet: true
+  logoURI: /images/chains/bsctestnet/logo.svg
+  name: bsctestnet
   nativeToken:
     decimals: 18
     name: BNB
     symbol: BNB
   protocol: ethereum
   rpcUrls:
-    - http: https://bsc.drpc.org
-    - http: https://bnb.rpc.subquery.network/public
-    - http: https://binance.llamarpc.com
-    - http: https://bsc.blockrazor.xyz
-    - http: https://bsc-pokt.nodies.app
-  technicalStack: other
-  transactionOverrides:
-    gasPrice: 50000000
-mantapacific:
+    - http: https://bsc-testnet.publicnode.com
+    - http: https://bsc-testnet.drpc.org
+kairos:
   blockExplorers:
-    - apiUrl: https://pacific-explorer.manta.network/api
-      family: blockscout
-      name: Manta Pacific Explorer
-      url: https://pacific-explorer.manta.network
-  blocks:
-    confirmations: 1
-    estimateBlockTime: 3
-    reorgPeriod: 5
-  chainId: 169
-  deployer:
-    name: Abacus Works
-    url: https://www.hyperlane.xyz
-  displayName: Manta Pacific
-  displayNameShort: Manta
-  domainId: 169
-  gasCurrencyCoinGeckoId: ethereum
-  gnosisSafeTransactionServiceUrl: https://transaction.safe.manta.network
-  isTestnet: false
-  logoURI: /images/chains/mantapacific/logo.svg
-  name: mantapacific
-  nativeToken:
-    decimals: 18
-    name: Ether
-    symbol: ETH
-  protocol: ethereum
-  rpcUrls:
-    - http: https://pacific-rpc.manta.network/http
-    - http: https://manta.nirvanalabs.xyz/mantapublic
-  technicalStack: opstack
-kaia:
-  # yaml-language-server: $schema=../schema.json
-  blockExplorers:
-    - apiUrl: https://mainnet-oapi.kaiascan.io/api
-      family: etherscan
+    - apiUrl: https://kairos-oapi.kaiascan.io/api
+      family: routescan
       name: Kaiascan
-      url: https://kaiascan.io
+      url: https://kairos.kaiascan.io
   blocks:
     confirmations: 1
     estimateBlockTime: 1
     reorgPeriod: 5
-  chainId: 8217
+  chainId: 1001
   deployer:
     name: Abacus Works
     url: https://www.hyperlane.xyz
-  displayName: Kaia
-  domainId: 8217
-  gasCurrencyCoinGeckoId: kaia
-  logoURI: /images/chains/kaia/logo.svg
-  name: kaia
+  displayName: Kairos
+  domainId: 1001
+  gasCurrencyCoinGeckoId: KAIA
+  isTestnet: true
+  logoURI: /images/chains/kairos/logo.svg
+  name: kairos
   nativeToken:
     decimals: 18
     name: Kaia
     symbol: KAIA
   protocol: ethereum
   rpcUrls:
-    - http: https://public-en.node.kaia.io
+    - http: https://public-en-kairos.node.kaia.io
   technicalStack: other
+avalanchefuji:
+  blockExplorers:
+    - apiUrl: https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api
+      family: routescan
+      name: SnowTrace
+      url: https://testnet.snowtrace.io
+  blocks:
+    confirmations: 1
+    estimateBlockTime: 2
+    reorgPeriod: 3
+  chainId: 43113
+  deployer:
+    name: Abacus Works
+    url: https://www.hyperlane.xyz
+  displayName: Avalanche Fuji
+  domainId: 43113
+  gasCurrencyCoinGeckoId: avalanche-2
+  isTestnet: true
+  logoURI: /images/chains/avalanchefuji/logo.svg
+  name: avalanchefuji
+  nativeToken:
+    decimals: 18
+    name: Avalanche
+    symbol: AVAX
+  protocol: ethereum
+  rpcUrls:
+    - http: https://api.avax-test.network/ext/bc/C/rpc
+      pagination:
+        maxBlockRange: 2048

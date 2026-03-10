@@ -11,6 +11,7 @@ env:
   WORKLOAD_IDENTITY_PROVIDER: 'projects/164899678221/locations/global/workloadIdentityPools/sto-dev-452608/providers/hyperlane-warp-gha-prvdr'
   AR_REPO_LOCATION: 'asia-southeast2'
   AR_URL: 'asia-southeast2-docker.pkg.dev/sto-dev-452608/bridge'
+  NEXT_PUBLIC_BRIDGE_DASHBOARD_URL: https://bridge-dashboard.testnet.pruv.network/
 
 jobs:
   deploy-hyperlane-warp-alpha:
