@@ -244,6 +244,25 @@ tokens:
     connections:
       - token: ethereum|pruvtest|0x8c57C2dd5CfcB7ECBfF45323b6Fe3F37e9e0a34E
   ## MMF
+  ## KAI
+  - chainName: pruvtest
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: KAI
+    name: KAIA TEST
+    addressOrDenom: '0x6a7ac9211E92cF0c4481BC606666b30B2d110592'
+    collateralAddressOrDenom: '0x16ce242211458bd215ec7304367520f60b0d09c9'
+    connections:
+      - token: ethereum|kairos|0x1dAEeB8410741C38Ed77fc0d120186BD6b6e0306
+  - chainName: kairos
+    standard: EvmHypSynthetic
+    decimals: 6
+    symbol: KAI
+    name: KAIA TEST
+    addressOrDenom: '0x1dAEeB8410741C38Ed77fc0d120186BD6b6e0306'
+    connections:
+      - token: ethereum|pruvtest|0x6a7ac9211E92cF0c4481BC606666b30B2d110592
+  ## KAI
 
 # STAGING #
 options: {}
