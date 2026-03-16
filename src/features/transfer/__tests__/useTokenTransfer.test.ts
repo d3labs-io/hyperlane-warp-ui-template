@@ -553,5 +553,125 @@ describe('useTokenTransfer', () => {
         }),
       );
     });
+
+    it('completes transfer across multiple retries with progressive approvals (non-USDC from pruv)', async () => {
+      // Simulates a user who:
+      // 1. Approves USDC bridge fee, then stops (failure before token approval)
+      // 2. Retries: USDC skipped (already approved), approves token, then stops
+      // 3. Retries: both approvals skipped, only transfer needed - succeeds
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      // --- Attempt 1: USDC bridge fee approval succeeds, user stops before token approval ---
+      isApproveRequiredAdapterMock.mockResolvedValue(true); // USDC needs approval
+      warpCoreMock.getTransferRemoteTxs.mockResolvedValue([
+        {
+          category: warpTxCategories.Approval,
+          type: providerTypes.Ethereum,
+          transaction: { to: 'token-router' },
+        },
+        {
+          category: warpTxCategories.Transfer,
+          type: providerTypes.Ethereum,
+          transaction: { to: 'router' },
+        },
+      ]);
+
+      const confirmUSDC = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xusdc-approve' } });
+      sendTransactionMock
+        .mockResolvedValueOnce({ hash: '0xusdc-approve', confirm: confirmUSDC })
+        .mockRejectedValueOnce(new Error('User stopped'));
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      // USDC approval tx was created and sent, then failed on token approval
+      expect(populateApproveTxMock).toHaveBeenCalledTimes(1);
+      expect(sendTransactionMock).toHaveBeenCalledTimes(2);
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+
+      // Reset call counts for next attempt
+      sendTransactionMock.mockClear();
+      populateApproveTxMock.mockClear();
+      updateTransferStatusMock.mockClear();
+      addTransferMock.mockClear();
+
+      // --- Attempt 2: USDC already approved (skipped), token approval succeeds, user stops ---
+      isApproveRequiredAdapterMock.mockResolvedValue(false); // USDC already approved on-chain
+      warpCoreMock.getTransferRemoteTxs.mockResolvedValue([
+        {
+          category: warpTxCategories.Approval,
+          type: providerTypes.Ethereum,
+          transaction: { to: 'token-router' },
+        },
+        {
+          category: warpTxCategories.Transfer,
+          type: providerTypes.Ethereum,
+          transaction: { to: 'router' },
+        },
+      ]);
+
+      const confirmToken = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtoken-approve' } });
+      sendTransactionMock
+        .mockResolvedValueOnce({ hash: '0xtoken-approve', confirm: confirmToken })
+        .mockRejectedValueOnce(new Error('User stopped'));
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      // USDC approval skipped - populateApproveTx not called for USDC
+      expect(populateApproveTxMock).not.toHaveBeenCalled();
+      // Token approval sent, then failed on transfer
+      expect(sendTransactionMock).toHaveBeenCalledTimes(2);
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+
+      // Reset call counts for final attempt
+      sendTransactionMock.mockClear();
+      populateApproveTxMock.mockClear();
+      updateTransferStatusMock.mockClear();
+      addTransferMock.mockClear();
+
+      // --- Attempt 3: Both approvals done, only transfer needed - succeeds ---
+      isApproveRequiredAdapterMock.mockResolvedValue(false); // USDC still approved
+      warpCoreMock.getTransferRemoteTxs.mockResolvedValue([
+        {
+          category: warpTxCategories.Transfer,
+          type: providerTypes.Ethereum,
+          transaction: { to: 'router' },
+        },
+      ]); // SDK no longer includes token approval tx
+
+      const confirmTransfer = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtransfer' } });
+      sendTransactionMock.mockResolvedValueOnce({
+        hash: '0xtransfer',
+        confirm: confirmTransfer,
+      });
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      // No approvals needed - only transfer sent
+      expect(populateApproveTxMock).not.toHaveBeenCalled();
+      expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+      expect(sendTransactionMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tx: expect.objectContaining({ category: warpTxCategories.Transfer }),
+        }),
+      );
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(
+        0,
+        TransferStatus.ConfirmedTransfer,
+        expect.objectContaining({ originTxHash: '0xtransfer' }),
+      );
+    });
   });
 });
