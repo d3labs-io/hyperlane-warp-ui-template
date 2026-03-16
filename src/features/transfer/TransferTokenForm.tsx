@@ -700,8 +700,9 @@ function ReviewDetails({
   let amountWei = isNft ? amount.toString() : toWei(amount, originToken?.decimals);
   if (isBridgeFeeUSDC && originTokenSymbol === 'USDC') {
     const bridgeFee = config.pruvOriginFeeUSDC[destination];
-    if (bridgeFee) {
-      const totalAmount = parseFloat(amount) + bridgeFee;
+    const parsedAmount = parseFloat(amount);
+    if (bridgeFee && !isNaN(parsedAmount)) {
+      const totalAmount = parsedAmount + bridgeFee;
       amountWei = toWei(totalAmount.toString(), originToken?.decimals);
     }
   }
