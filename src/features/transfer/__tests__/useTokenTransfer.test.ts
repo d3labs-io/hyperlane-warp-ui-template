@@ -14,6 +14,7 @@ const {
   sendTransactionMock,
   sendMultiTransactionMock,
   populateApproveTxMock,
+  isApproveRequiredAdapterMock,
   EvmTokenAdapterMock,
   multiProviderMock,
   warpCoreMock,
@@ -35,7 +36,11 @@ const {
   const sendTransactionMock = vi.fn();
   const sendMultiTransactionMock = vi.fn();
   const populateApproveTxMock = vi.fn(() => Promise.resolve({ to: 'router' }));
-  const EvmTokenAdapterMock = vi.fn(() => ({ populateApproveTx: populateApproveTxMock }));
+  const isApproveRequiredAdapterMock = vi.fn(() => Promise.resolve(true));
+  const EvmTokenAdapterMock = vi.fn(() => ({
+    populateApproveTx: populateApproveTxMock,
+    isApproveRequired: isApproveRequiredAdapterMock,
+  }));
   const providerTypes = {
     Ethereum: 'ethereum',
     Starknet: 'starknet',
@@ -95,6 +100,7 @@ const {
     sendTransactionMock,
     sendMultiTransactionMock,
     populateApproveTxMock,
+    isApproveRequiredAdapterMock,
     EvmTokenAdapterMock,
     multiProviderMock,
     warpCoreMock,
@@ -221,6 +227,7 @@ describe('useTokenTransfer', () => {
     ]);
     config.enablePruvOriginFeeUSDC = true;
     config.pruvOriginFeeUSDC['dest-chain'] = 1.25;
+    isApproveRequiredAdapterMock.mockResolvedValue(true);
   });
 
   it('executes transfer flow and records transactions', async () => {
@@ -381,5 +388,170 @@ describe('useTokenTransfer', () => {
       'Insufficient collateral on destination for transfer',
     );
     expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+  });
+
+  describe('USDC allowance checks for pruv transfers', () => {
+    const usdcToken = {
+      ...originToken,
+      symbol: 'USDC',
+      decimals: 6,
+      addressOrDenom: '0xusdc-router',
+      collateralAddressOrDenom: '0xusdc-collateral',
+    } as any;
+
+    it('skips USDC bridge fee approval when allowance is sufficient (non-USDC token)', async () => {
+      isApproveRequiredAdapterMock.mockResolvedValue(false);
+      const confirmTransfer = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash-transfer' } });
+      sendTransactionMock.mockResolvedValueOnce({
+        hash: '0xhash-transfer',
+        confirm: confirmTransfer,
+      });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      // Should check allowance with correct args
+      expect(isApproveRequiredAdapterMock).toHaveBeenCalledWith(
+        '0xsender',
+        originToken.addressOrDenom,
+        '1250000',
+      );
+      // Should NOT create approval tx since allowance is sufficient
+      expect(populateApproveTxMock).not.toHaveBeenCalled();
+      // Only transfer tx sent, no approval
+      expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(
+        0,
+        TransferStatus.ConfirmedTransfer,
+        expect.objectContaining({ originTxHash: '0xhash-transfer' }),
+      );
+    });
+
+    it('adds USDC bridge fee approval when allowance is insufficient (non-USDC token)', async () => {
+      isApproveRequiredAdapterMock.mockResolvedValue(true);
+      const confirmApproval = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash-approval' } });
+      const confirmTransfer = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash-transfer' } });
+      sendTransactionMock
+        .mockResolvedValueOnce({ hash: '0xhash-approval', confirm: confirmApproval })
+        .mockResolvedValueOnce({ hash: '0xhash-transfer', confirm: confirmTransfer });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      expect(isApproveRequiredAdapterMock).toHaveBeenCalled();
+      expect(populateApproveTxMock).toHaveBeenCalledWith({
+        weiAmountOrId: '1250000',
+        recipient: originToken.addressOrDenom,
+      });
+      expect(sendTransactionMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('skips approval when allowance is sufficient (USDC token from pruv)', async () => {
+      getTokenByIndexMock.mockReturnValue(usdcToken);
+      isApproveRequiredAdapterMock.mockResolvedValue(false);
+      const confirmTransfer = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash-transfer' } });
+      sendTransactionMock.mockResolvedValueOnce({
+        hash: '0xhash-transfer',
+        confirm: confirmTransfer,
+      });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      // Should check allowance for amount + bridgeFee
+      expect(isApproveRequiredAdapterMock).toHaveBeenCalledWith(
+        '0xsender',
+        usdcToken.addressOrDenom,
+        '2.75', // toWei mock returns string as-is: parseFloat('1.5') + 1.25 = 2.75
+      );
+      expect(populateApproveTxMock).not.toHaveBeenCalled();
+      expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('creates approval with amount+bridgeFee when allowance insufficient (USDC token from pruv)', async () => {
+      getTokenByIndexMock.mockReturnValue(usdcToken);
+      isApproveRequiredAdapterMock.mockResolvedValue(true);
+      const confirmApproval = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash-approval' } });
+      const confirmTransfer = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash-transfer' } });
+      sendTransactionMock
+        .mockResolvedValueOnce({ hash: '0xhash-approval', confirm: confirmApproval })
+        .mockResolvedValueOnce({ hash: '0xhash-transfer', confirm: confirmTransfer });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      expect(isApproveRequiredAdapterMock).toHaveBeenCalled();
+      // Approval tx should use total amount (amount + bridgeFee)
+      expect(populateApproveTxMock).toHaveBeenCalledWith({
+        weiAmountOrId: '2.75',
+        recipient: usdcToken.addressOrDenom,
+      });
+      expect(sendTransactionMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('removes SDK-added approval tx when allowance is sufficient (USDC token from pruv)', async () => {
+      getTokenByIndexMock.mockReturnValue(usdcToken);
+      isApproveRequiredAdapterMock.mockResolvedValue(false);
+      // SDK returns both approval and transfer txs
+      warpCoreMock.getTransferRemoteTxs.mockResolvedValue([
+        {
+          category: warpTxCategories.Approval,
+          type: providerTypes.Ethereum,
+          transaction: { to: 'router-approval' },
+        },
+        {
+          category: warpTxCategories.Transfer,
+          type: providerTypes.Ethereum,
+          transaction: { to: 'router-transfer' },
+        },
+      ]);
+      const confirmTransfer = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xhash-transfer' } });
+      sendTransactionMock.mockResolvedValueOnce({
+        hash: '0xhash-transfer',
+        confirm: confirmTransfer,
+      });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(values);
+      });
+
+      // SDK approval should be removed since allowance is sufficient
+      expect(populateApproveTxMock).not.toHaveBeenCalled();
+      expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+      // Verify only the transfer tx was sent
+      expect(sendTransactionMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tx: expect.objectContaining({ category: warpTxCategories.Transfer }),
+        }),
+      );
+    });
   });
 });
