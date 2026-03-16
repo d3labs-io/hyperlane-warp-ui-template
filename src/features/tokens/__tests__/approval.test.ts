@@ -173,8 +173,7 @@ describe('useIsUSDCBridgeFeeApproveRequired', () => {
 
   it('returns false when destination has no bridge fee configured', async () => {
     const { result } = renderHook(
-      () =>
-        useIsUSDCBridgeFeeApproveRequired('pruv-origin', 'unknown-chain', '0xspender', true),
+      () => useIsUSDCBridgeFeeApproveRequired('pruv-origin', 'unknown-chain', '0xspender', true),
       { wrapper: createWrapper() },
     );
 

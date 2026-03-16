@@ -51,7 +51,9 @@ export function useIsUSDCBridgeFeeApproveRequired(
       if (!owner || !spenderAddress) return false;
       const bridgeFeeUSDC = config.pruvOriginFeeUSDC[destination];
       if (!bridgeFeeUSDC) return false;
-      const usdcAmount = (bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals)).toString();
+      const usdcAmount = (
+        bridgeFeeUSDC * Math.pow(10, config.pruvUSDCMetadata.decimals)
+      ).toString();
       const usdcTokenAdapter = new EvmTokenAdapter(originChain, multiProvider, {
         token: config.pruvUSDCMetadata.address,
       });
