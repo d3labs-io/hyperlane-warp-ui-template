@@ -19,7 +19,7 @@ import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
 import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
-import { preEstimateGasForEvmTxs } from '../chains/rpcUtils';
+import { preEstimateGasForEvmTxs, resilientConfirm } from '../chains/rpcUtils';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
@@ -252,8 +252,9 @@ async function executeTransfer({
 
     // Pre-estimate gas via the CORS-resilient public client so wagmi doesn't
     // attempt estimation through the WalletConnect connector's rpcMap.
-    if (originProtocol === ProtocolType.Ethereum) {
-      const chainId = multiProvider.getChainMetadata(origin).chainId as number;
+    const isEvm = originProtocol === ProtocolType.Ethereum;
+    const chainId = isEvm ? (multiProvider.getChainMetadata(origin).chainId as number) : 0;
+    if (isEvm) {
       await preEstimateGasForEvmTxs(wagmiConfig, chainId, sender, txs as any);
     }
 
@@ -296,7 +297,12 @@ async function executeTransfer({
           transferIndex,
           (transferStatus = txCategoryToStatuses[tx.category][1]),
         );
-        txReceipt = await confirm();
+        // Race wallet confirmation against direct RPC polling for EVM chains.
+        // WalletConnect behaviour varies across wallets — some fail to resolve
+        // the confirm callback even after the tx lands on-chain.
+        txReceipt = isEvm
+          ? await resilientConfirm(confirm, hash, wagmiConfig, chainId)
+          : await confirm();
         const description = toTitleCase(tx.category);
         logger.debug(`${description} transaction confirmed, hash:`, hash);
         toastTxSuccess(`${description} transaction sent!`, hash, origin);
