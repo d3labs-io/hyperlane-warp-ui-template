@@ -489,6 +489,53 @@ describe('resilientConfirm with event polling (Safe wallet)', () => {
     await expect(promise).rejects.toThrow('Wallet rejected by user');
   });
 
+  test('detects transferRemote via Safe ExecutionSuccess when target contract has no sender-indexed events', async () => {
+    const realTxHash = '0xreal_onchain_hash';
+    const onChainReceipt = { status: 'success', transactionHash: realTxHash };
+    const safeTxHash = '0xsafe_internal_hash';
+    const sender = '0xSafeAddress1234567890abcdef1234567890abcdef';
+    const contractAddress = '0xRouterContract';
+
+    const walletConfirm = () => new Promise<never>(() => {});
+
+    // Hash-based polling always fails (safeTxHash not on-chain)
+    mockGetTransactionReceipt.mockImplementation(({ hash }: { hash: string }) => {
+      if (hash === realTxHash) return Promise.resolve(onChainReceipt);
+      return Promise.reject(new Error('not found'));
+    });
+
+    // Router emits SentTransferRemote(destination, recipient, amount) — sender NOT indexed
+    // Safe contract emits ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
+    mockGetLogs.mockImplementation(({ address }: { address: string }) => {
+      if (address === contractAddress) return Promise.resolve([]); // no sender topic
+      if (address === sender)
+        return Promise.resolve([
+          {
+            transactionHash: realTxHash,
+            topics: [
+              '0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e', // ExecutionSuccess selector
+              safeTxHash, // indexed txHash = safeTxHash we received from sendTransaction
+            ],
+          },
+        ]);
+      return Promise.resolve([]);
+    });
+
+    const promise = resilientConfirm(walletConfirm, safeTxHash, mockConfig, 1, {
+      contractAddress,
+      sender,
+    });
+
+    // After 15s initial delay the first cycle matches via senderLogs immediately
+    await vi.advanceTimersByTimeAsync(15100);
+    const result = await promise;
+
+    expect(result).toEqual({ type: ProviderType.Viem, receipt: onChainReceipt });
+    expect(mockGetLogs).toHaveBeenCalledWith(
+      expect.objectContaining({ address: sender, fromBlock: 90n }),
+    );
+  });
+
   test('hash-based polling still wins if it resolves before event polling', async () => {
     const receipt = { status: 'success', transactionHash: '0xhash' };
     const walletConfirm = () => new Promise<never>(() => {});

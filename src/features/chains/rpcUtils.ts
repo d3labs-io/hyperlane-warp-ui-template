@@ -230,17 +230,27 @@ async function pollForReceipt(
 }
 
 /**
- * Poll the blockchain for events emitted by a contract that involve a specific
- * sender address. This handles wallets (like Safe/Gnosis) that return an
- * internal hash (safeTxHash) instead of an on-chain txHash.
+ * Poll the blockchain for events that confirm a Safe wallet transaction.
  *
- * Works by watching for ANY event from the contract address and checking if the
- * sender appears in any log topic (covers ERC20 Transfer, Approval, etc.).
- * Completely chain-agnostic — no need to know Safe infrastructure URLs.
+ * Two strategies run in each polling cycle:
+ *
+ * 1. Target-contract strategy: watch `contractAddress` for any event where the
+ *    sender appears as an indexed topic. Covers ERC20 Approval/Transfer where
+ *    `owner`/`from` = Safe address.
+ *
+ * 2. Safe-contract strategy: watch the sender address itself for any event
+ *    where the wallet-returned hash appears as a topic. Safe emits
+ *    `ExecutionSuccess(bytes32 indexed txHash, uint256 payment)` when any tx
+ *    executes, with `txHash` = the safeTxHash we received from `sendTransaction`.
+ *    This catches transactions (like transferRemote) whose target contract does
+ *    not index the sender in any event.
+ *
+ * Completely chain-agnostic — no Safe infrastructure URLs needed.
  */
 async function pollForContractEvent(
   contractAddress: string,
   sender: string,
+  txHash: string,
   wagmiConfig: WagmiConfig,
   chainId: number,
   signal: AbortSignal,
@@ -262,6 +272,7 @@ async function pollForContractEvent(
 
   const delays = fibonacciDelays();
   const paddedSender = ('0x' + sender.slice(2).toLowerCase().padStart(64, '0')) as `0x${string}`;
+  const normalizedTxHash = txHash.toLowerCase();
 
   while (!signal.aborted) {
     if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
@@ -269,17 +280,30 @@ async function pollForContractEvent(
     }
 
     try {
-      const logs = await publicClient.getLogs({
-        address: contractAddress as `0x${string}`,
-        fromBlock: startBlock,
-        toBlock: 'latest',
-      });
+      // Strategy 1: target contract — find events where sender is a topic
+      // (covers ERC20 Approval/Transfer where owner/from = Safe address)
+      const [contractLogs, senderLogs] = await Promise.all([
+        publicClient.getLogs({
+          address: contractAddress as `0x${string}`,
+          fromBlock: startBlock,
+          toBlock: 'latest',
+        }),
+        // Strategy 2: Safe contract — find ExecutionSuccess(safeTxHash, ...)
+        // where our wallet-returned hash appears as a topic
+        publicClient.getLogs({
+          address: sender as `0x${string}`,
+          fromBlock: startBlock,
+          toBlock: 'latest',
+        }),
+      ]);
 
-      // Find logs where the sender appears as an indexed topic
-      // (covers ERC20 Transfer.from, Approval.owner, etc.)
-      const matchingLog = logs.find((log) =>
-        log.topics.some((topic) => topic?.toLowerCase() === paddedSender),
-      );
+      const matchingLog =
+        contractLogs.find((log) =>
+          log.topics.some((topic) => topic?.toLowerCase() === paddedSender),
+        ) ??
+        senderLogs.find((log) =>
+          log.topics.some((topic) => topic?.toLowerCase() === normalizedTxHash),
+        );
 
       if (matchingLog) {
         const receipt = await publicClient.getTransactionReceipt({
@@ -393,6 +417,7 @@ export async function resilientConfirm(
       ? pollForContractEvent(
           options.contractAddress,
           options.sender,
+          txHash,
           wagmiConfig,
           chainId,
           controller.signal,
