@@ -536,6 +536,45 @@ describe('resilientConfirm with event polling (Safe wallet)', () => {
     );
   });
 
+  test('detects tx via Safe ExecutionSuccess when txHash is non-indexed (in data, not topics)', async () => {
+    // Kairos Safe: ExecutionSuccess(bytes32 txHash, uint256 payment) — txHash NOT indexed
+    const realTxHash = '0xreal_onchain_hash_kairos';
+    const onChainReceipt = { status: 'success', transactionHash: realTxHash };
+    const safeTxHash = '0xfebace30d802464d9ff84fc97c5d40f950521ce8aee1602fdf91cb41b576e055';
+    const sender = '0x1e4bbdef691b9fa30b9365948ccd04fd66d3e5f0';
+    const contractAddress = '0x8fe41adb2890df3d591160052fb0e502e4f07f11'; // warp router
+
+    const walletConfirm = () => new Promise<never>(() => {});
+    mockGetTransactionReceipt.mockImplementation(({ hash }: { hash: string }) => {
+      if (hash === realTxHash) return Promise.resolve(onChainReceipt);
+      return Promise.reject(new Error('not found'));
+    });
+
+    mockGetLogs.mockImplementation(({ address }: { address: string }) => {
+      if (address === contractAddress) return Promise.resolve([]); // no sender-indexed events
+      if (address === sender)
+        return Promise.resolve([
+          {
+            transactionHash: realTxHash,
+            // Only the event selector in topics — txHash is non-indexed, in data instead
+            topics: ['0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e'],
+            data: safeTxHash + '0000000000000000000000000000000000000000000000000000000000000000',
+          },
+        ]);
+      return Promise.resolve([]);
+    });
+
+    const promise = resilientConfirm(walletConfirm, safeTxHash, mockConfig, 1, {
+      contractAddress,
+      sender,
+    });
+
+    await vi.advanceTimersByTimeAsync(15100);
+    const result = await promise;
+
+    expect(result).toEqual({ type: ProviderType.Viem, receipt: onChainReceipt });
+  });
+
   test('hash-based polling still wins if it resolves before event polling', async () => {
     const receipt = { status: 'success', transactionHash: '0xhash' };
     const walletConfirm = () => new Promise<never>(() => {});
