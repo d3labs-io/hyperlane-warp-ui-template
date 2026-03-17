@@ -301,8 +301,13 @@ async function pollForContractEvent(
         contractLogs.find((log) =>
           log.topics.some((topic) => topic?.toLowerCase() === paddedSender),
         ) ??
-        senderLogs.find((log) =>
-          log.topics.some((topic) => topic?.toLowerCase() === normalizedTxHash),
+        senderLogs.find(
+          (log) =>
+            // Newer Safe versions: txHash is indexed → appears in topics
+            log.topics.some((topic) => topic?.toLowerCase() === normalizedTxHash) ||
+            // Older Safe versions: txHash is non-indexed → first 32 bytes of data
+            // ExecutionSuccess(bytes32 txHash, uint256 payment) ABI encoding
+            (log.data?.length >= 66 && log.data.slice(0, 66).toLowerCase() === normalizedTxHash),
         );
 
       if (matchingLog) {
