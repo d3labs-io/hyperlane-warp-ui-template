@@ -134,6 +134,25 @@ tokens:
     addressOrDenom: '0xF8158CC824E5794fc35e31D777476e98b51498C0'
     connections:
       - token: ethereum|pruv|0x3E8b4A5050B54D648993a2B15f76B415A34A9c9F
-## GSF
+  ## GSF
+  ## Yield8
+  - chainName: pruv
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: Yield8
+    name: Yield8
+    addressOrDenom: '0xE7B575a17cEa16B386bd842B35767c10F7Fb3954'
+    collateralAddressOrDenom: '0x73b341566003de459c864ab9bbeff08f6bb82c2b'
+    connections:
+      - token: ethereum|kaia|0x858Cd43F18b8834566a406C177A24a667E82E4D2
+  - chainName: kaia
+    standard: EvmHypSynthetic
+    decimals: 6
+    symbol: Yield8
+    name: Yield8
+    addressOrDenom: '0x858Cd43F18b8834566a406C177A24a667E82E4D2'
+    connections:
+      - token: ethereum|pruv|0xE7B575a17cEa16B386bd842B35767c10F7Fb3954
+## Yield8
 
 options: {}
