@@ -312,8 +312,7 @@ async function executeTransfer({
         // Extract the real on-chain txHash from the receipt. This may differ
         // from `hash` when a Safe wallet returns a safeTxHash instead of the
         // actual on-chain hash (detected via event-based polling).
-        const confirmedHash =
-          (txReceipt?.receipt as Record<string, any>)?.transactionHash ?? hash;
+        const confirmedHash = (txReceipt?.receipt as Record<string, any>)?.transactionHash ?? hash;
         const description = toTitleCase(tx.category);
         logger.debug(`${description} transaction confirmed, hash:`, confirmedHash);
         toastTxSuccess(`${description} transaction sent!`, confirmedHash, origin);
