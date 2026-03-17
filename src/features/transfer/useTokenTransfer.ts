@@ -300,14 +300,25 @@ async function executeTransfer({
         // Race wallet confirmation against direct RPC polling for EVM chains.
         // WalletConnect behaviour varies across wallets — some fail to resolve
         // the confirm callback even after the tx lands on-chain.
+        // Also pass contract address + sender for event-based fallback which
+        // handles Safe (Gnosis) wallets that return a safeTxHash instead of
+        // an on-chain txHash.
         txReceipt = isEvm
-          ? await resilientConfirm(confirm, hash, wagmiConfig, chainId)
+          ? await resilientConfirm(confirm, hash, wagmiConfig, chainId, {
+              contractAddress: (tx.transaction as Record<string, any>).to,
+              sender,
+            })
           : await confirm();
+        // Extract the real on-chain txHash from the receipt. This may differ
+        // from `hash` when a Safe wallet returns a safeTxHash instead of the
+        // actual on-chain hash (detected via event-based polling).
+        const confirmedHash =
+          (txReceipt?.receipt as Record<string, any>)?.transactionHash ?? hash;
         const description = toTitleCase(tx.category);
-        logger.debug(`${description} transaction confirmed, hash:`, hash);
-        toastTxSuccess(`${description} transaction sent!`, hash, origin);
+        logger.debug(`${description} transaction confirmed, hash:`, confirmedHash);
+        toastTxSuccess(`${description} transaction sent!`, confirmedHash, origin);
 
-        hashes.push(hash);
+        hashes.push(confirmedHash);
       }
     }
 

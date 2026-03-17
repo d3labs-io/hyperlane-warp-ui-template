@@ -162,6 +162,7 @@ export async function preEstimateGasForEvmTxs(
 // ---------------------------------------------------------------------------
 
 const INITIAL_POLL_DELAY_MS = 5_000; // wait before first poll
+const EVENT_POLL_INITIAL_DELAY_MS = 15_000; // wait longer before event polling (give hash-based a chance)
 const MAX_POLL_DURATION_MS = 60 * 60 * 1_000; // 1 hour
 const MAX_FIBONACCI_DELAY_MS = 30_000; // cap individual interval at 30s
 const TX_REVERTED_ERROR = 'Transaction reverted on-chain';
@@ -197,17 +198,7 @@ async function pollForReceipt(
   const delays = fibonacciDelays();
 
   // Wait before first poll to give the wallet a chance to confirm on its own
-  await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, INITIAL_POLL_DELAY_MS);
-    signal.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer);
-        reject(new Error('Polling cancelled'));
-      },
-      { once: true },
-    );
-  });
+  await abortableSleep(INITIAL_POLL_DELAY_MS, signal);
 
   while (!signal.aborted) {
     if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
@@ -232,24 +223,113 @@ async function pollForReceipt(
     }
 
     const delay = delays.next().value!;
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(resolve, delay);
-      signal.addEventListener(
-        'abort',
-        () => {
-          clearTimeout(timer);
-          reject(new Error('Polling cancelled'));
-        },
-        { once: true },
-      );
-    });
+    await abortableSleep(delay, signal);
   }
 
   throw new Error('Polling cancelled');
 }
 
 /**
- * Race the wallet's confirm() against direct RPC polling.
+ * Poll the blockchain for events emitted by a contract that involve a specific
+ * sender address. This handles wallets (like Safe/Gnosis) that return an
+ * internal hash (safeTxHash) instead of an on-chain txHash.
+ *
+ * Works by watching for ANY event from the contract address and checking if the
+ * sender appears in any log topic (covers ERC20 Transfer, Approval, etc.).
+ * Completely chain-agnostic — no need to know Safe infrastructure URLs.
+ */
+async function pollForContractEvent(
+  contractAddress: string,
+  sender: string,
+  wagmiConfig: WagmiConfig,
+  chainId: number,
+  signal: AbortSignal,
+): Promise<TypedTransactionReceipt> {
+  const publicClient = getPublicClient(wagmiConfig, { chainId });
+  if (!publicClient) throw new Error('No public client available for event polling');
+
+  const startTime = Date.now();
+
+  // Capture block number BEFORE sleeping — the Safe tx may be mined during
+  // the delay, and we'd miss it if we snapshot the block after sleeping.
+  // Subtract a small buffer to cover any latency between sendTransaction
+  // returning and this function starting.
+  const currentBlock = await publicClient.getBlockNumber();
+  const startBlock = currentBlock > 10n ? currentBlock - 10n : 0n;
+
+  // Wait before first poll — give hash-based polling a chance first
+  await abortableSleep(EVENT_POLL_INITIAL_DELAY_MS, signal);
+
+  const delays = fibonacciDelays();
+  const paddedSender = ('0x' + sender.slice(2).toLowerCase().padStart(64, '0')) as `0x${string}`;
+
+  while (!signal.aborted) {
+    if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
+      throw new Error('Event polling timed out');
+    }
+
+    try {
+      const logs = await publicClient.getLogs({
+        address: contractAddress as `0x${string}`,
+        fromBlock: startBlock,
+        toBlock: 'latest',
+      });
+
+      // Find logs where the sender appears as an indexed topic
+      // (covers ERC20 Transfer.from, Approval.owner, etc.)
+      const matchingLog = logs.find((log) =>
+        log.topics.some((topic) => topic?.toLowerCase() === paddedSender),
+      );
+
+      if (matchingLog) {
+        const receipt = await publicClient.getTransactionReceipt({
+          hash: matchingLog.transactionHash,
+        });
+
+        if (receipt.status === 'reverted') {
+          throw new Error(TX_REVERTED_ERROR);
+        }
+
+        logger.debug('Event polling confirmed tx:', matchingLog.transactionHash);
+        return { type: ProviderType.Viem, receipt } as TypedTransactionReceipt;
+      }
+    } catch (error: any) {
+      if (error?.message === TX_REVERTED_ERROR) throw error;
+      // RPC hiccup — retry
+    }
+
+    const delay = delays.next().value!;
+    await abortableSleep(delay, signal);
+  }
+
+  throw new Error('Event polling cancelled');
+}
+
+/** Sleep that rejects on abort signal. */
+function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        reject(new Error('Sleep cancelled'));
+      },
+      { once: true },
+    );
+  });
+}
+
+export interface ResilientConfirmOptions {
+  /** Contract address being called (enables event-based fallback for Safe wallets) */
+  contractAddress?: string;
+  /** Sender address (Safe address — used with contractAddress for event filtering) */
+  sender?: string;
+}
+
+/**
+ * Race the wallet's confirm() against direct RPC polling and (optionally)
+ * contract event watching.
  *
  * WalletConnect behaviour varies across wallet brands — some wallets fail to
  * resolve the confirmation callback even after the tx lands on-chain. This
@@ -257,58 +337,87 @@ async function pollForReceipt(
  * configured RPCs) in parallel with the wallet's own confirm(). Whichever
  * returns first wins.
  *
+ * When contractAddress and sender are provided, a third leg watches for
+ * contract events involving the sender. This handles Safe (Gnosis) wallets
+ * which return a safeTxHash that never appears on-chain — the event watcher
+ * detects the actual on-chain transaction by monitoring contract logs.
+ *
  * Semantics (differs from Promise.any):
- * - Either fulfills → resolve immediately, abort the other.
- * - RPC rejects with "reverted" → reject immediately (definitive on-chain failure).
- * - Wallet rejects but RPC still running → keep polling (wallet errors are not definitive).
- * - Both reject → surface the wallet error (more informative for the user).
+ * - Any leg fulfills → resolve immediately, abort the others.
+ * - Any leg rejects with "reverted" → reject immediately (definitive on-chain failure).
+ * - A leg rejects non-definitively → keep others alive.
+ * - All legs reject → surface the wallet error (most informative for the user).
  */
 export async function resilientConfirm(
   walletConfirm: () => Promise<TypedTransactionReceipt>,
   txHash: string,
   wagmiConfig: WagmiConfig,
   chainId: number,
+  options?: ResilientConfirmOptions,
 ): Promise<TypedTransactionReceipt> {
   const controller = new AbortController();
   const cleanup = () => controller.abort();
 
-  let walletDone = false;
-  let rpcDone = false;
+  // Track how many legs are still running
+  const totalLegs = options?.contractAddress && options?.sender ? 3 : 2;
+  let failedCount = 0;
   let walletError: Error | undefined;
 
-  // Signals when both legs have failed so Promise.race can reject
-  let signalBothFailed!: () => void;
-  const bothFailedBarrier = new Promise<void>((r) => {
-    signalBothFailed = r;
+  let signalAllFailed!: () => void;
+  const allFailedBarrier = new Promise<void>((r) => {
+    signalAllFailed = r;
   });
 
-  // Wallet leg: on success → resolve; on failure → swallow (keep RPC alive)
+  const onLegFail = (err: Error, isWallet: boolean) => {
+    if (isWallet) walletError = err;
+    failedCount++;
+    if (failedCount >= totalLegs) signalAllFailed();
+  };
+
+  // Wallet leg: on success → resolve; on failure → swallow (keep others alive)
   const walletLeg = walletConfirm().catch((err) => {
-    walletDone = true;
-    walletError = err;
-    if (rpcDone) signalBothFailed();
-    return new Promise<TypedTransactionReceipt>(() => {}); // hang until RPC settles
+    onLegFail(err, true);
+    return new Promise<TypedTransactionReceipt>(() => {}); // hang until others settle
   });
 
   // RPC leg: on success → resolve; on revert → throw; on other failure → swallow
   const rpcLeg = pollForReceipt(txHash, wagmiConfig, chainId, controller.signal).catch((err) => {
-    if (err?.message === TX_REVERTED_ERROR) throw err; // definitive on-chain failure
-    rpcDone = true;
-    if (walletDone) signalBothFailed();
-    return new Promise<TypedTransactionReceipt>(() => {}); // hang until wallet settles
+    if (err?.message === TX_REVERTED_ERROR) throw err;
+    onLegFail(err, false);
+    return new Promise<TypedTransactionReceipt>(() => {});
   });
 
-  // Both-failed leg: rejects with wallet error when both legs have failed
-  const bothFailedLeg = bothFailedBarrier.then((): never => {
-    throw walletError ?? new Error('Both wallet and RPC polling failed');
+  // Event leg (optional): watches contract logs for Safe/non-standard wallets
+  const eventLeg =
+    options?.contractAddress && options?.sender
+      ? pollForContractEvent(
+          options.contractAddress,
+          options.sender,
+          wagmiConfig,
+          chainId,
+          controller.signal,
+        ).catch((err) => {
+          if (err?.message === TX_REVERTED_ERROR) throw err;
+          onLegFail(err, false);
+          return new Promise<TypedTransactionReceipt>(() => {});
+        })
+      : null;
+
+  // All-failed leg: rejects with wallet error when every leg has failed
+  const allFailedLeg = allFailedBarrier.then((): never => {
+    throw walletError ?? new Error('All confirmation methods failed');
   });
 
-  // Prevent unhandled rejection if one leg wins and the other later rejects
+  // Prevent unhandled rejection if one leg wins and another later rejects
   rpcLeg.catch(() => {});
-  bothFailedLeg.catch(() => {});
+  eventLeg?.catch(() => {});
+  allFailedLeg.catch(() => {});
+
+  const legs = [walletLeg, rpcLeg, allFailedLeg];
+  if (eventLeg) legs.push(eventLeg);
 
   try {
-    const result = await Promise.race([walletLeg, rpcLeg, bothFailedLeg]);
+    const result = await Promise.race(legs);
     cleanup();
     return result;
   } catch (err) {

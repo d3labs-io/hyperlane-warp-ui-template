@@ -365,3 +365,148 @@ describe('resilientConfirm', () => {
     expect(result).toEqual({ type: ProviderType.Viem, receipt: rpcReceipt });
   });
 });
+
+// ---------------------------------------------------------------------------
+// resilientConfirm with event-based polling (Safe wallet support)
+// ---------------------------------------------------------------------------
+
+describe('resilientConfirm with event polling (Safe wallet)', () => {
+  const mockConfig = {} as any;
+  const mockGetTransactionReceipt = vi.fn();
+  const mockGetBlockNumber = vi.fn();
+  const mockGetLogs = vi.fn();
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockGetPublicClient.mockReturnValue({
+      getTransactionReceipt: mockGetTransactionReceipt,
+      getBlockNumber: mockGetBlockNumber,
+      getLogs: mockGetLogs,
+    } as any);
+    mockGetBlockNumber.mockResolvedValue(100n);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  test('event polling detects tx when hash-based polling fails (Safe wallet)', async () => {
+    const realTxHash = '0xreal_onchain_hash';
+    const onChainReceipt = { status: 'success', transactionHash: realTxHash };
+    const safeTxHash = '0xsafe_internal_hash';
+    const sender = '0xSafeAddress1234567890abcdef1234567890abcdef';
+    const contractAddress = '0xContractAddr';
+    const paddedSender = '0x' + sender.slice(2).toLowerCase().padStart(64, '0');
+
+    // Wallet never resolves (safeTxHash can't be confirmed via standard flow)
+    const walletConfirm = () => new Promise<never>(() => {});
+
+    // Hash-based polling always fails (safeTxHash not on-chain)
+    mockGetTransactionReceipt.mockImplementation(({ hash }: { hash: string }) => {
+      if (hash === safeTxHash) return Promise.reject(new Error('not found'));
+      if (hash === realTxHash) return Promise.resolve(onChainReceipt);
+      return Promise.reject(new Error('not found'));
+    });
+
+    // Event polling: no logs initially, then matching logs appear
+    mockGetLogs
+      .mockResolvedValueOnce([]) // first poll: no events yet
+      .mockResolvedValue([
+        {
+          transactionHash: realTxHash,
+          topics: [
+            '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', // Transfer topic0
+            paddedSender, // from = Safe address
+          ],
+        },
+      ]);
+
+    const promise = resilientConfirm(walletConfirm, safeTxHash, mockConfig, 1, {
+      contractAddress,
+      sender,
+    });
+
+    // Advance past 15s event poll initial delay (block number captured before sleep)
+    await vi.advanceTimersByTimeAsync(15100);
+    // First getLogs call returns empty, wait fibonacci delay (1s)
+    await vi.advanceTimersByTimeAsync(1100);
+    // Second getLogs call returns matching log → receipt fetched → resolved
+
+    const result = await promise;
+    expect(result).toEqual({ type: ProviderType.Viem, receipt: onChainReceipt });
+    // startBlock = 100n - 10n = 90n (10-block safety buffer)
+    expect(mockGetLogs).toHaveBeenCalledWith({
+      address: contractAddress,
+      fromBlock: 90n,
+      toBlock: 'latest',
+    });
+  });
+
+  test('event polling rejects on reverted tx', async () => {
+    const realTxHash = '0xreverted_hash';
+    const sender = '0xSafeAddress1234567890abcdef1234567890abcdef';
+    const paddedSender = '0x' + sender.slice(2).toLowerCase().padStart(64, '0');
+
+    const walletConfirm = () => new Promise<never>(() => {});
+    mockGetTransactionReceipt.mockImplementation(({ hash }: { hash: string }) => {
+      if (hash === '0xsafe_hash') return Promise.reject(new Error('not found'));
+      return Promise.resolve({ status: 'reverted', transactionHash: realTxHash });
+    });
+
+    mockGetLogs.mockResolvedValue([
+      {
+        transactionHash: realTxHash,
+        topics: ['0xtopic0', paddedSender],
+      },
+    ]);
+
+    const promise = resilientConfirm(walletConfirm, '0xsafe_hash', mockConfig, 1, {
+      contractAddress: '0xContract',
+      sender,
+    });
+
+    // Flush microtasks so getBlockNumber() resolves (called before sleep now),
+    // then advance timers synchronously to avoid unhandled rejection warnings
+    await vi.advanceTimersByTimeAsync(0);
+    vi.advanceTimersByTime(15200);
+
+    await expect(promise).rejects.toThrow('Transaction reverted on-chain');
+  });
+
+  test('rejects with wallet error when all three legs fail', async () => {
+    const walletError = new Error('Wallet rejected by user');
+    const walletConfirm = vi.fn().mockImplementation(() => Promise.reject(walletError));
+
+    // No public client → both RPC and event polling fail immediately
+    mockGetPublicClient.mockReturnValue(null);
+
+    const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1, {
+      contractAddress: '0xContract',
+      sender: '0xSender1234567890abcdef1234567890abcdef1234',
+    });
+
+    await expect(promise).rejects.toThrow('Wallet rejected by user');
+  });
+
+  test('hash-based polling still wins if it resolves before event polling', async () => {
+    const receipt = { status: 'success', transactionHash: '0xhash' };
+    const walletConfirm = () => new Promise<never>(() => {});
+    // Hash-based polling succeeds (normal wallet, not Safe)
+    mockGetTransactionReceipt.mockResolvedValue(receipt);
+    mockGetLogs.mockResolvedValue([]);
+
+    const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1, {
+      contractAddress: '0xContract',
+      sender: '0xSender1234567890abcdef1234567890abcdef1234',
+    });
+
+    // Hash-based polling resolves at 5s (before event polling starts at 15s)
+    vi.advanceTimersByTime(5100);
+    const result = await promise;
+
+    expect(result).toEqual({ type: ProviderType.Viem, receipt });
+    // getLogs should not have been called since event polling hasn't started
+    expect(mockGetLogs).not.toHaveBeenCalled();
+  });
+});
