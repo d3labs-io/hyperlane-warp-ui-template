@@ -250,13 +250,8 @@ async function executeTransfer({
       }
     }
 
-    // Pre-estimate gas via the CORS-resilient public client so wagmi doesn't
-    // attempt estimation through the WalletConnect connector's rpcMap.
     const isEvm = originProtocol === ProtocolType.Ethereum;
     const chainId = isEvm ? (multiProvider.getChainMetadata(origin).chainId as number) : 0;
-    if (isEvm) {
-      await preEstimateGasForEvmTxs(wagmiConfig, chainId, sender, txs as any);
-    }
 
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;
@@ -283,6 +278,15 @@ async function executeTransfer({
       hashes.push(hash);
     } else {
       for (const tx of txs) {
+        // Estimate gas right before sending each tx via the CORS-resilient
+        // public client so wagmi doesn't fall back to the WalletConnect
+        // connector's rpcMap (which may be CORS-blocked). Doing this per-tx
+        // (rather than upfront for all txs) ensures that when we reach
+        // transferRemote, any prior approvals are already confirmed on-chain
+        // and the simulation succeeds with the correct allowance state.
+        if (isEvm) {
+          await preEstimateGasForEvmTxs(wagmiConfig, chainId, sender, [tx as any]);
+        }
         updateTransferStatus(
           transferIndex,
           (transferStatus = txCategoryToStatuses[tx.category][0]),
