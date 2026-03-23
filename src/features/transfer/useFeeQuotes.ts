@@ -1,9 +1,10 @@
+/* eslint-disable @tanstack/query/exhaustive-deps */
 import { Token, TokenAmount, WarpCore } from '@hyperlane-xyz/sdk';
 import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
-import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
+import { getTokenByIndex, getWarpCoreQueryKey, useWarpCore } from '../tokens/hooks';
 import { TransferFormValues } from './types';
 
 const FEE_QUOTE_REFRESH_INTERVAL = 15_000; // 15s
@@ -13,10 +14,11 @@ export function useFeeQuotes(
   enabled: boolean,
 ) {
   const warpCore = useWarpCore();
+  const warpCoreKey = getWarpCoreQueryKey(warpCore);
 
   const shouldFetch = enabled && !!destination && typeof tokenIndex === 'number';
   const { isLoading, isError, data, isFetching } = useQuery({
-    queryKey: ['useFeeQuotes', origin, destination, tokenIndex, warpCore],
+    queryKey: ['useFeeQuotes', origin, destination, tokenIndex, warpCoreKey],
     queryFn: () => fetchFeeQuotes(warpCore, destination, tokenIndex),
     enabled: shouldFetch,
     refetchInterval: FEE_QUOTE_REFRESH_INTERVAL,

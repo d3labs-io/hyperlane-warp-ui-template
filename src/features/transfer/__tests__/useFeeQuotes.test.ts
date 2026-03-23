@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../tokens/hooks', () => ({
   useWarpCore: vi.fn(),
   getTokenByIndex: vi.fn(),
+  getWarpCoreQueryKey: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -18,7 +19,7 @@ vi.mock('../../../utils/logger', () => ({
 }));
 
 import { useQuery } from '@tanstack/react-query';
-import { getTokenByIndex, useWarpCore } from '../../tokens/hooks';
+import { getTokenByIndex, getWarpCoreQueryKey, useWarpCore } from '../../tokens/hooks';
 import { TransferFormValues } from '../types';
 import { useFeeQuotes } from '../useFeeQuotes';
 
@@ -30,11 +31,13 @@ describe('useFeeQuotes', () => {
   const mockToken = { symbol: 'USDC', decimals: 6 } as IToken;
   const mockInterchainQuote = new TokenAmount(100n, mockToken);
   const mockLocalQuote = new TokenAmount(50n, mockToken);
+  const mockWarpCoreKey = 'mock-warp-core-key';
 
   beforeEach(() => {
     vi.clearAllMocks();
     (useWarpCore as any).mockReturnValue(mockWarpCore);
     (getTokenByIndex as any).mockReturnValue(mockToken);
+    (getWarpCoreQueryKey as any).mockReturnValue(mockWarpCoreKey);
   });
 
   it('should return loading, error, and fees properties', () => {
@@ -84,7 +87,7 @@ describe('useFeeQuotes', () => {
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['useFeeQuotes', 'ethereum', 'polygon', 0],
+        queryKey: ['useFeeQuotes', 'ethereum', 'polygon', 0, mockWarpCoreKey],
         queryFn: expect.any(Function),
         enabled: true,
         refetchInterval: 15_000,
@@ -269,7 +272,7 @@ describe('useFeeQuotes', () => {
     expect(useQuery).toHaveBeenCalledTimes(2);
     expect(useQuery).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        queryKey: ['useFeeQuotes', 'ethereum', 'arbitrum', 1],
+        queryKey: ['useFeeQuotes', 'ethereum', 'arbitrum', 1, mockWarpCoreKey],
       }),
     );
   });
