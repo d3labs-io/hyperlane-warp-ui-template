@@ -1,5 +1,6 @@
 /* eslint-disable @tanstack/query/exhaustive-deps */
 import { Token, TokenAmount, WarpCore } from '@hyperlane-xyz/sdk';
+import { getAccountAddressAndPubKey, useAccounts } from '@hyperlane-xyz/widgets';
 import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import { config } from '../../consts/config';
@@ -15,11 +16,23 @@ export function useFeeQuotes(
 ) {
   const warpCore = useWarpCore();
   const warpCoreKey = getWarpCoreQueryKey(warpCore);
+  const { accounts } = useAccounts(warpCore.multiProvider, config.addressBlacklist);
+  const { address: sender, publicKey: senderPubKey } = getAccountAddressAndPubKey(
+    warpCore.multiProvider,
+    origin,
+    accounts,
+  );
 
-  const shouldFetch = enabled && !!destination && typeof tokenIndex === 'number';
+  const shouldFetch = enabled && !!destination && typeof tokenIndex === 'number' && !!sender;
   const { isLoading, isError, data, isFetching } = useQuery({
-    queryKey: ['useFeeQuotes', origin, destination, tokenIndex, warpCoreKey],
-    queryFn: () => fetchFeeQuotes(warpCore, destination, tokenIndex),
+    queryKey: ['useFeeQuotes', origin, destination, tokenIndex, warpCoreKey, sender],
+    queryFn: () =>
+      fetchFeeQuotes(warpCore, {
+        destination,
+        tokenIndex,
+        sender,
+        senderPubKey,
+      }),
     enabled: shouldFetch,
     refetchInterval: FEE_QUOTE_REFRESH_INTERVAL,
   });
@@ -29,21 +42,46 @@ export function useFeeQuotes(
 
 export async function fetchFeeQuotes(
   warpCore: WarpCore,
-  destination?: ChainName,
-  tokenIndex?: number,
+  {
+    destination,
+    tokenIndex,
+    sender,
+    senderPubKey,
+  }: {
+    destination?: ChainName;
+    tokenIndex?: number;
+    sender?: string;
+    senderPubKey?: Promise<string | undefined>;
+  },
 ): Promise<{ interchainQuote: TokenAmount; localQuote: TokenAmount } | null> {
   const originToken = getTokenByIndex(warpCore, tokenIndex);
-  if (!destination || !originToken) return null;
+  if (!destination || !originToken || !sender) return null;
 
   logger.debug('Calculating custom fee quotes');
-  const localQuote = getLocalGasQuote(warpCore, originToken);
   const interchainQuote =
     getCustomInterchainQuote(warpCore, originToken.chainName, destination) || originToken.amount(0);
 
-  return {
-    interchainQuote,
-    localQuote,
-  };
+  try {
+    const resolvedPubKey = senderPubKey ? await senderPubKey : undefined;
+    const localQuote = await warpCore.getLocalTransferFeeAmount({
+      originToken,
+      destination,
+      sender,
+      senderPubKey: resolvedPubKey,
+      interchainFee: interchainQuote.amount > 0n ? interchainQuote : undefined,
+    });
+
+    return {
+      interchainQuote,
+      localQuote,
+    };
+  } catch (error) {
+    logger.warn('Failed to estimate local gas quote', error);
+    return {
+      interchainQuote,
+      localQuote: getLocalGasQuote(warpCore, originToken),
+    };
+  }
 }
 
 function getLocalGasQuote(warpCore: WarpCore, originToken: Token): TokenAmount {

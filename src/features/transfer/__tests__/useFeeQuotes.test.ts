@@ -8,6 +8,14 @@ vi.mock('../../tokens/hooks', () => ({
   getWarpCoreQueryKey: vi.fn(),
 }));
 
+vi.mock('@hyperlane-xyz/widgets', () => ({
+  useAccounts: vi.fn().mockReturnValue({ accounts: {} }),
+  getAccountAddressAndPubKey: vi.fn().mockReturnValue({
+    address: '0xsender',
+    publicKey: Promise.resolve('0xpub'),
+  }),
+}));
+
 vi.mock('@tanstack/react-query', () => ({
   useQuery: vi.fn(),
 }));
@@ -87,7 +95,7 @@ describe('useFeeQuotes', () => {
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['useFeeQuotes', 'ethereum', 'polygon', 0, mockWarpCoreKey],
+        queryKey: ['useFeeQuotes', 'ethereum', 'polygon', 0, mockWarpCoreKey, '0xsender'],
         queryFn: expect.any(Function),
         enabled: true,
         refetchInterval: 15_000,
@@ -272,7 +280,7 @@ describe('useFeeQuotes', () => {
     expect(useQuery).toHaveBeenCalledTimes(2);
     expect(useQuery).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        queryKey: ['useFeeQuotes', 'ethereum', 'arbitrum', 1, mockWarpCoreKey],
+        queryKey: ['useFeeQuotes', 'ethereum', 'arbitrum', 1, mockWarpCoreKey, '0xsender'],
       }),
     );
   });

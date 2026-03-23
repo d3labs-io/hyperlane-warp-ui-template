@@ -1,5 +1,5 @@
-import { Modal, Tooltip } from '@hyperlane-xyz/widgets';
-import { Skeleton } from '@interchain-ui/react';
+import { WarpCoreFeeEstimate } from '@hyperlane-xyz/sdk';
+import { Modal, Skeleton, Tooltip } from '@hyperlane-xyz/widgets';
 import Link from 'next/link';
 
 export function TransferFeeModal({
@@ -10,7 +10,7 @@ export function TransferFeeModal({
 }: {
   isOpen: boolean;
   close: () => void;
-  fees: { localQuote: any; interchainQuote: any; totalFees: any } | null;
+  fees: WarpCoreFeeEstimate | null;
   isLoading: boolean;
 }) {
   return (
@@ -33,9 +33,9 @@ export function TransferFeeModal({
               />
             </span>
             {isLoading ? (
-              <Skeleton />
+              <Skeleton className="h-4 w-52" />
             ) : (
-              <span>{`${fees.localQuote.getDecimalFormattedAmount().toFixed(8) || '0'} ${
+              <span>{`${fees.localQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
                 fees.localQuote.token.symbol || ''
               }`}</span>
             )}
@@ -52,9 +52,9 @@ export function TransferFeeModal({
               />
             </span>
             {isLoading ? (
-              <Skeleton />
+              <Skeleton className="h-4 w-52" />
             ) : (
-              <span>{`${fees.interchainQuote.getDecimalFormattedAmount().toFixed(8) || '0'} ${
+              <span>{`${fees.interchainQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
                 fees.interchainQuote.token.symbol || ''
               }`}</span>
             )}
@@ -63,7 +63,7 @@ export function TransferFeeModal({
         <span className="mt-2">
           Read more about{' '}
           <Link
-            href={'/'}
+            href="/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary-500 underline"

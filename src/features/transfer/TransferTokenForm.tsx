@@ -354,12 +354,12 @@ function RecipientSection({ isReview }: { isReview: boolean }) {
 }
 
 function TokenBalance({ label, balance }: { label: string; balance?: TokenAmount | null }) {
-  const value =
-    balance?.getDecimalFormattedAmount().toLocaleString('en-US', {
-      maximumFractionDigits: 6,
-      useGrouping: false,
-    }) || '0';
-  return <div className="text-right text-xs text-gray-600">{`${label}: ${value}`}</div>;
+  const value = balance?.getDecimalFormattedAmount().toFixed(4) || '0.0000';
+  return (
+    <div className="text-right text-xs text-gray-600">
+      {`${label}: ${value}`} {balance?.token.symbol}
+    </div>
+  );
 }
 
 function ButtonSection({
@@ -598,6 +598,8 @@ function MaxButton({ balance, disabled }: { balance?: TokenAmount; disabled?: bo
       if (feeValue) {
         const feeBn = new BigNumber(feeValue);
         if (feeBn.isGreaterThan(0)) {
+          // Apply the outbound bridge fee, but never exceed balance - fee.
+          targetAmountBn = targetAmountBn.minus(feeBn);
           const balanceDecimal = balance.getDecimalFormattedAmount();
           const balanceBn = new BigNumber(balanceDecimal);
           const maxAllowedFromBalance = balanceBn.minus(feeBn);
@@ -615,9 +617,8 @@ function MaxButton({ balance, disabled }: { balance?: TokenAmount; disabled?: bo
       targetAmountBn = new BigNumber(0);
     }
 
-    const roundedAmount = new BigNumber(decimalsAmount).toFixed(8, BigNumber.ROUND_FLOOR);
-    const trimmedAmount = roundedAmount.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
-    setFieldValue('amount', trimmedAmount);
+    const roundedAmount = targetAmountBn.toFixed(4, BigNumber.ROUND_FLOOR);
+    setFieldValue('amount', roundedAmount);
   };
 
   return (
@@ -673,7 +674,6 @@ function FeePreviewSection({
   const { values } = useFormikContext<TransferFormValues>();
   const warpCore = useWarpCore();
   const originToken = routeOverrideToken || getTokenByIndex(warpCore, values.tokenIndex);
-  const isPruvOrigin = values.origin?.toLowerCase().startsWith('pruv');
   const hasRequiredInputs =
     !!originToken &&
     !!values.recipient &&
@@ -687,7 +687,7 @@ function FeePreviewSection({
     [originToken, fees],
   );
 
-  if (!isPruvOrigin || !hasRequiredInputs) return null;
+  if (!hasRequiredInputs) return null;
 
   return <FeeSectionButton visible={!isReview} isLoading={isQuoteLoading} fees={feePreview} />;
 }
@@ -833,14 +833,16 @@ function ReviewDetails({
                     }`}</span>
                   </p>
                 )}
-                {interchainQuote && interchainQuote.amount > 0n && (
-                  <p className="flex">
-                    <span className="min-w-[7.5rem]">Bridge Fee</span>
-                    <span>{`${interchainQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
-                      interchainQuote.token.symbol || ''
-                    }`}</span>
-                  </p>
-                )}
+                {interchainQuote &&
+                  interchainQuote.amount > 0n &&
+                  !values.origin.startsWith('pruv') && (
+                    <p className="flex">
+                      <span className="min-w-[7.5rem]">Bridge Fee</span>
+                      <span>{`${interchainQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
+                        interchainQuote.token.symbol || ''
+                      }`}</span>
+                    </p>
+                  )}
                 {isBridgeFeeUSDC && (
                   <p className="flex">
                     <span className="min-w-[7.5rem]">Bridge Fee (USDC)</span>
@@ -950,7 +952,7 @@ function formatFeePreview(
   }
 
   const totalFees = groupedFees
-    .map((fee) => `${fee.getDecimalFormattedAmount().toFixed(8)} ${fee.token.symbol}`)
+    .map((fee) => `${fee.getDecimalFormattedAmount().toFixed(4)} ${fee.token.symbol}`)
     .join(', ');
 
   return {
@@ -1076,14 +1078,27 @@ async function validateForm(
       ];
     }
 
-    const result = await warpCore.validateTransfer({
-      originTokenAmount: transferToken.amount(amountWei),
-      destination,
-      recipient,
-      sender: address || '',
-      senderPubKey: await senderPubKey,
-    });
+    let result: Record<string, string> | null = null;
+    try {
+      result = await warpCore.validateTransfer({
+        originTokenAmount: transferToken.amount(amountWei),
+        destination,
+        recipient,
+        sender: address || '',
+        senderPubKey: await senderPubKey,
+      });
+    } catch (validationError) {
+      const errorMsg = errorToString(validationError, 80).toLowerCase();
+      const isMissingFeeData = errorMsg.includes('invalid fee data');
+      const isPruvOriginChain = origin.toLowerCase().startsWith('pruv');
 
+      if (isMissingFeeData && isPruvOriginChain) {
+        // Some custom RPCs (like pruv) do not expose fee data; allow validation to continue.
+        logger.warn('Skipping warpCore validation due to missing fee data', validationError);
+      } else {
+        throw validationError;
+      }
+    }
     if (!isNullish(result)) return [result, null];
 
     if (transferToken.addressOrDenom === token.addressOrDenom) return [null, null];
@@ -1094,7 +1109,9 @@ async function validateForm(
     let errorMsg = errorToString(error, 40);
     const fullError = `${errorMsg} ${error.message}`;
     if (insufficientFundsErrMsg.test(fullError) || emptyAccountErrMsg.test(fullError)) {
-      errorMsg = 'Insufficient funds for gas fees';
+      const chainMetadata = warpCore.multiProvider.getChainMetadata(values.origin);
+      const nativeToken = Token.FromChainMetadataNativeToken(chainMetadata);
+      errorMsg = `Insufficient ${nativeToken.symbol} for gas fees`;
     }
     return [{ form: errorMsg }, null];
   }

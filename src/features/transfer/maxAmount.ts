@@ -1,5 +1,5 @@
 import { MultiProtocolProvider, TokenAmount, WarpCore } from '@hyperlane-xyz/sdk';
-import { ProtocolType } from '@hyperlane-xyz/utils';
+import { ProtocolType, errorToString } from '@hyperlane-xyz/utils';
 import { AccountInfo, getAccountAddressAndPubKey } from '@hyperlane-xyz/widgets';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -38,6 +38,7 @@ async function fetchMaxAmount(
       balance,
       destination,
       sender: address,
+      recipient: address,
       senderPubKey: await publicKey,
     });
 
@@ -50,6 +51,15 @@ async function fetchMaxAmount(
 
     return maxAmount;
   } catch (error) {
+    const errorMsg = errorToString(error, 80).toLowerCase();
+    const isMissingFeeData = errorMsg.includes('invalid fee data');
+    const isPruvOriginChain = origin.toLowerCase().startsWith('pruv');
+
+    if (isMissingFeeData && isPruvOriginChain) {
+      logger.warn('Skipping max amount fetch due to missing fee data', error);
+      return balance;
+    }
+
     logger.warn('Error fetching fee quotes for max amount', error);
     const chainName = multiProvider.tryGetChainMetadata(origin)?.displayName;
     toast.warn(`Cannot simulate transfer, ${chainName} native balance may be insufficient.`);
