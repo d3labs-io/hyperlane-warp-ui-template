@@ -669,14 +669,20 @@ function FeePreviewSection({
   const warpCore = useWarpCore();
   const originToken = routeOverrideToken || getTokenByIndex(warpCore, values.tokenIndex);
   const isPruvOrigin = values.origin?.toLowerCase().startsWith('pruv');
+  const hasRequiredInputs =
+    !!originToken &&
+    !!values.recipient &&
+    !!values.amount &&
+    !Number.isNaN(Number(values.amount)) &&
+    Number(values.amount) > 0;
 
-  const { isLoading: isQuoteLoading, fees } = useFeeQuotes(values, true);
+  const { isLoading: isQuoteLoading, fees } = useFeeQuotes(values, hasRequiredInputs);
   const feePreview = useMemo(
     () => formatFeePreview(originToken, fees ?? null),
     [originToken, fees],
   );
 
-  if (!isPruvOrigin) return null;
+  if (!isPruvOrigin || !hasRequiredInputs) return null;
 
   return <FeeSectionButton visible={!isReview} isLoading={isQuoteLoading} fees={feePreview} />;
 }
