@@ -60,6 +60,7 @@ import {
 } from '../tokens/hooks';
 import { getTokensWithSameCollateralAddresses, isValidMultiCollateralToken } from '../tokens/utils';
 import { WalletConnectionWarning } from '../wallet/WalletConnectionWarning';
+import { FeeSectionButton } from './FeeSectionButton';
 import { RecipientConfirmationModal } from './RecipientConfirmationModal';
 import { useFetchMaxAmount } from './maxAmount';
 import { TransferFormValues } from './types';
@@ -489,6 +490,7 @@ function ButtonSection({
   if (!isReview) {
     return (
       <>
+        <FeePreviewSection routeOverrideToken={routeOverrideToken} isReview={isReview} />
         <div
           className={`mt-3 gap-2 bg-amber-400 px-4 text-sm ${
             showWarning ? 'max-h-38 py-2' : 'max-h-0'
@@ -656,6 +658,29 @@ function SelfButton({ disabled }: { disabled?: boolean }) {
   );
 }
 
+function FeePreviewSection({
+  routeOverrideToken,
+  isReview,
+}: {
+  routeOverrideToken: Token | null;
+  isReview: boolean;
+}) {
+  const { values } = useFormikContext<TransferFormValues>();
+  const warpCore = useWarpCore();
+  const originToken = routeOverrideToken || getTokenByIndex(warpCore, values.tokenIndex);
+  const isPruvOrigin = values.origin?.toLowerCase().startsWith('pruv');
+
+  const { isLoading: isQuoteLoading, fees } = useFeeQuotes(values, true);
+  const feePreview = useMemo(
+    () => formatFeePreview(originToken, fees ?? null),
+    [originToken, fees],
+  );
+
+  if (!isPruvOrigin) return null;
+
+  return <FeeSectionButton visible={!isReview} isLoading={isQuoteLoading} fees={feePreview} />;
+}
+
 function ReviewDetails({
   visible,
   routeOverrideToken,
@@ -712,7 +737,7 @@ function ReviewDetails({
     amountWei,
     visible,
   );
-  const { isLoading: isQuoteLoading, fees } = useFeeQuotes(values, visible);
+  const { isLoading: isQuoteLoading, fees } = useFeeQuotes(values, true);
 
   // Check if USDC bridge fee approval is needed (for non-USDC tokens from pruv)
   const { isLoading: isUSDCApproveLoading, isUSDCApproveRequired } =
@@ -729,10 +754,11 @@ function ReviewDetails({
   const totalApprovals = (isApproveRequired ? 1 : 0) + (needAdditionalUSDCApproval ? 1 : 0);
   const receivedAmount = amount;
 
-  const interchainQuote =
-    originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
-      ? fees?.interchainQuote.plus(chainsRentEstimate[originToken.chainName])
-      : fees?.interchainQuote;
+  const feePreview = useMemo(
+    () => formatFeePreview(originToken, fees ?? null),
+    [originToken, fees],
+  );
+  const interchainQuote = feePreview?.interchainQuote;
 
   return (
     <div
@@ -788,11 +814,11 @@ function ReviewDetails({
                     <span>{`${scaledAmount.value} ${originTokenSymbol} (scaled from ${scaledAmount.originScale} to ${scaledAmount.destinationScale})`}</span>
                   </p>
                 )}
-                {fees?.localQuote && fees.localQuote.amount > 0n && (
+                {feePreview?.localQuote && feePreview.localQuote.amount > 0n && (
                   <p className="flex">
                     <span className="min-w-[7.5rem]">Local Gas (est.)</span>
-                    <span>{`${fees.localQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
-                      fees.localQuote.token.symbol || ''
+                    <span>{`${feePreview.localQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
+                      feePreview.localQuote.token.symbol || ''
                     }`}</span>
                   </p>
                 )}
@@ -875,6 +901,52 @@ function useFormInitialValues(): TransferFormValues {
       recipient: '',
     };
   }, [warpCore, destinationQuery, originQuery, tokenIndex, defaultOriginToken]);
+}
+
+function formatFeePreview(
+  originToken: Token | null | undefined,
+  feeQuotes: { interchainQuote: TokenAmount; localQuote: TokenAmount } | null,
+) {
+  if (!feeQuotes) return null;
+
+  const interchainQuoteWithRent =
+    originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
+      ? feeQuotes.interchainQuote.plus(chainsRentEstimate[originToken.chainName])
+      : feeQuotes.interchainQuote;
+
+  const amountsToGroup = [interchainQuoteWithRent, feeQuotes.localQuote].filter(
+    (amount) => amount && amount.amount > 0n,
+  ) as TokenAmount[];
+
+  if (!amountsToGroup.length) return null;
+
+  const groupedFees: TokenAmount[] = [];
+
+  for (const tokenAmount of amountsToGroup) {
+    let merged = false;
+
+    for (let i = 0; i < groupedFees.length; i++) {
+      if (tokenAmount.token.isFungibleWith(groupedFees[i].token)) {
+        groupedFees[i] = groupedFees[i].plus(tokenAmount.amount);
+        merged = true;
+        break;
+      }
+    }
+
+    if (!merged) {
+      groupedFees.push(new TokenAmount(tokenAmount.amount, tokenAmount.token));
+    }
+  }
+
+  const totalFees = groupedFees
+    .map((fee) => `${fee.getDecimalFormattedAmount().toFixed(8)} ${fee.token.symbol}`)
+    .join(', ');
+
+  return {
+    ...feeQuotes,
+    interchainQuote: interchainQuoteWithRent,
+    totalFees,
+  };
 }
 
 const insufficientFundsErrMsg = /insufficient.[funds|lamports]/i;
