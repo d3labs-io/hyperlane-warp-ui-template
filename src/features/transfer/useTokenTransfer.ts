@@ -19,7 +19,7 @@ import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
 import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
-import { preEstimateGasForEvmTxs } from '../chains/rpcUtils';
+import { ensureWalletOnChain, preEstimateGasForEvmTxs } from '../chains/rpcUtils';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
@@ -254,6 +254,10 @@ async function executeTransfer({
     // attempt estimation through the WalletConnect connector's rpcMap.
     if (originProtocol === ProtocolType.Ethereum) {
       const chainId = multiProvider.getChainMetadata(origin).chainId as number;
+      // Ensure the wallet is on the origin chain before submitting. WalletConnect
+      // with MetaMask mobile can take >2 s to propagate a chain switch back to
+      // wagmi's store, so we poll until the change is confirmed (up to 30 s).
+      await ensureWalletOnChain(wagmiConfig, chainId);
       await preEstimateGasForEvmTxs(wagmiConfig, chainId, sender, txs as any);
     }
 

@@ -12,7 +12,7 @@
  */
 
 import { ChainMetadata, ProviderType, ViemProvider } from '@hyperlane-xyz/sdk';
-import { getPublicClient } from '@wagmi/core';
+import { getAccount, getPublicClient, switchChain } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { type Chain, createPublicClient, custom } from 'viem';
 import { type Config as WagmiConfig } from 'wagmi';
@@ -150,4 +150,51 @@ export async function preEstimateGasForEvmTxs(
       logger.warn('Gas pre-estimation failed, wallet will estimate during signing', e);
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// WalletConnect chain-switch resilience
+// ---------------------------------------------------------------------------
+
+const CHAIN_SWITCH_POLL_MS = 500;
+const CHAIN_SWITCH_TIMEOUT_MS = 30_000;
+
+/**
+ * Poll wagmi's getAccount until the active chain matches `chainId`.
+ *
+ * WalletConnect with MetaMask mobile can take several seconds after switchChain
+ * resolves before the wagmi store reflects the new chain. Polling here avoids
+ * the hard-coded 2 s sleep in @hyperlane-xyz/widgets which is often too short.
+ */
+export async function waitForChainSwitch(
+  wagmiConfig: WagmiConfig,
+  chainId: number,
+  timeoutMs = CHAIN_SWITCH_TIMEOUT_MS,
+): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (getAccount(wagmiConfig).chainId === chainId) return;
+    await new Promise<void>((r) => setTimeout(r, CHAIN_SWITCH_POLL_MS));
+  }
+  throw new Error(
+    `ChainMismatchError: wallet did not switch to chain ${chainId} within ${timeoutMs / 1000}s`,
+  );
+}
+
+/**
+ * Switch the wallet to `chainId` (if not already there) and wait for wagmi to
+ * reflect the change before returning. Safe to call before every EVM transaction.
+ */
+export async function ensureWalletOnChain(
+  wagmiConfig: WagmiConfig,
+  chainId: number,
+): Promise<void> {
+  if (getAccount(wagmiConfig).chainId === chainId) return;
+  try {
+    await switchChain(wagmiConfig, { chainId });
+  } catch {
+    // Ignore — wallet may reject if already on the right chain or user cancels.
+    // waitForChainSwitch below will throw with a clear message if it still fails.
+  }
+  await waitForChainSwitch(wagmiConfig, chainId);
 }
