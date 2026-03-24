@@ -13,6 +13,8 @@ const {
   tryGetMsgIdMock,
   sendTransactionMock,
   sendMultiTransactionMock,
+  mockEnsureWalletOnChain,
+  mockPreEstimateGasForEvmTxs,
   populateApproveTxMock,
   isApproveRequiredAdapterMock,
   EvmTokenAdapterMock,
@@ -35,6 +37,8 @@ const {
   const tryGetMsgIdMock = vi.fn(() => 'msg-1');
   const sendTransactionMock = vi.fn();
   const sendMultiTransactionMock = vi.fn();
+  const mockEnsureWalletOnChain = vi.fn(() => Promise.resolve());
+  const mockPreEstimateGasForEvmTxs = vi.fn(() => Promise.resolve());
   const populateApproveTxMock = vi.fn(() => Promise.resolve({ to: 'router' }));
   const isApproveRequiredAdapterMock = vi.fn(() => Promise.resolve(true));
   const EvmTokenAdapterMock = vi.fn(() => ({
@@ -57,6 +61,7 @@ const {
     tryGetExplorerAddressUrl: vi.fn(),
     tryGetExplorerTxUrl: vi.fn(),
     getProviderNetwork: vi.fn(),
+    getChainMetadata: vi.fn(() => ({ chainId: 11155111 })), // Sepolia
   } as any;
 
   const warpCoreMock = {
@@ -72,6 +77,11 @@ const {
       sendTransaction: sendTransactionMock,
       sendMultiTransaction: sendMultiTransactionMock,
     },
+    // 'ethereum' matches ProtocolType.Ethereum from @hyperlane-xyz/utils
+    ethereum: {
+      sendTransaction: sendTransactionMock,
+      sendMultiTransaction: sendMultiTransactionMock,
+    },
   } as any;
 
   const accountsResponse = {
@@ -79,7 +89,10 @@ const {
   } as any;
 
   const activeChainsResponse = {
-    chains: { evm: { chainName: 'ethereum' } },
+    chains: {
+      evm: { chainName: 'ethereum' },
+      ethereum: { chainName: 'sepolia' }, // used when originToken.protocol === 'ethereum'
+    },
   } as any;
 
   const config = {
@@ -99,6 +112,8 @@ const {
     tryGetMsgIdMock,
     sendTransactionMock,
     sendMultiTransactionMock,
+    mockEnsureWalletOnChain,
+    mockPreEstimateGasForEvmTxs,
     populateApproveTxMock,
     isApproveRequiredAdapterMock,
     EvmTokenAdapterMock,
@@ -183,6 +198,11 @@ vi.mock('wagmi', () => ({
 
 vi.mock('@wagmi/core', () => ({
   getPublicClient: () => undefined,
+}));
+
+vi.mock('../../chains/rpcUtils', () => ({
+  ensureWalletOnChain: (...args: any[]) => mockEnsureWalletOnChain(...args),
+  preEstimateGasForEvmTxs: (...args: any[]) => mockPreEstimateGasForEvmTxs(...args),
 }));
 
 describe('useTokenTransfer', () => {
@@ -555,6 +575,7 @@ describe('useTokenTransfer', () => {
     });
 
     it('completes transfer across multiple retries with progressive approvals (non-USDC from pruv)', async () => {
+
       // Simulates a user who:
       // 1. Approves USDC bridge fee, then stops (failure before token approval)
       // 2. Retries: USDC skipped (already approved), approves token, then stops
@@ -671,6 +692,108 @@ describe('useTokenTransfer', () => {
         0,
         TransferStatus.ConfirmedTransfer,
         expect.objectContaining({ originTxHash: '0xtransfer' }),
+      );
+    });
+  });
+
+  describe('EVM chain-switch guard (ensureWalletOnChain)', () => {
+    // Use protocol:'ethereum' to exercise the ProtocolType.Ethereum branch,
+    // which is the branch that calls ensureWalletOnChain.
+    const evmToken = {
+      protocol: 'ethereum', // matches ProtocolType.Ethereum from @hyperlane-xyz/utils
+      symbol: 'TEST',
+      decimals: 18,
+      chainName: 'sepolia',
+      addressOrDenom: '0xtoken',
+      collateralAddressOrDenom: '0xcollateral',
+      isNft: () => false,
+      amount: vi.fn(() => ({ amount: 'raw-amount' })),
+      getConnectionForChain: vi.fn(() => ({
+        token: { addressOrDenom: '0xdest-token', protocol: 'ethereum', decimals: 18, scale: 18 },
+      })),
+    } as any;
+
+    const evmValues = {
+      origin: 'sepolia',
+      destination: 'dest-chain',
+      tokenIndex: 0,
+      amount: '1.0',
+      recipient: '0xrecipient',
+    } as any;
+
+    beforeEach(() => {
+      config.enablePruvOriginFeeUSDC = false; // skip pruv logic for these tests
+      getTokenByIndexMock.mockReturnValue(evmToken);
+      warpCoreMock.getTransferRemoteTxs.mockResolvedValue([
+        {
+          category: warpTxCategories.Transfer,
+          type: 'ethereum',
+          transaction: { to: '0xrouter' },
+        },
+      ]);
+      mockEnsureWalletOnChain.mockResolvedValue(undefined);
+      mockPreEstimateGasForEvmTxs.mockResolvedValue(undefined);
+    });
+
+    it('calls ensureWalletOnChain with wagmiConfig and the origin chainId before sending', async () => {
+      const confirm = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx' } });
+      sendTransactionMock.mockResolvedValue({ hash: '0xtx', confirm });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(evmValues);
+      });
+
+      // wagmiConfig is {} (from useConfig mock), chainId is 11155111 (Sepolia from getChainMetadata mock)
+      expect(mockEnsureWalletOnChain).toHaveBeenCalledWith({}, 11155111);
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(
+        0,
+        TransferStatus.ConfirmedTransfer,
+        expect.objectContaining({ originTxHash: '0xtx' }),
+      );
+    });
+
+    it('surfaces ChainMismatchError from ensureWalletOnChain as a chain mismatch toast', async () => {
+      mockEnsureWalletOnChain.mockRejectedValue(
+        new Error('ChainMismatchError: wallet did not switch'),
+      );
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(evmValues);
+      });
+
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+      expect(toastErrorMock).toHaveBeenCalledWith('Wallet must be connected to origin chain', {
+        autoClose: 8000,
+        ariaLabel: 'Transfer Failed',
+        theme: 'colored',
+      });
+      // sendTransaction should never be reached
+      expect(sendTransactionMock).not.toHaveBeenCalled();
+    });
+
+    it('calls preEstimateGasForEvmTxs after ensureWalletOnChain succeeds', async () => {
+      const confirm = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx' } });
+      sendTransactionMock.mockResolvedValue({ hash: '0xtx', confirm });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(evmValues);
+      });
+
+      expect(mockPreEstimateGasForEvmTxs).toHaveBeenCalledWith(
+        {}, // wagmiConfig
+        11155111, // chainId
+        '0xsender',
+        expect.any(Array),
       );
     });
   });

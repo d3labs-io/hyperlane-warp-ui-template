@@ -2,7 +2,13 @@ import { ProviderType } from '@hyperlane-xyz/sdk';
 import { BigNumber } from 'ethers';
 import { type Chain } from 'viem';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { preEstimateGasForEvmTxs, raceViemProviderBuilder, withWcRpcFirst } from '../rpcUtils';
+import {
+  ensureWalletOnChain,
+  preEstimateGasForEvmTxs,
+  raceViemProviderBuilder,
+  waitForChainSwitch,
+  withWcRpcFirst,
+} from '../rpcUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -147,10 +153,14 @@ describe('withWcRpcFirst', () => {
 
 const mockEstimateGas = vi.fn();
 const mockGetPublicClient = vi.fn();
+const mockGetAccount = vi.fn();
+const mockSwitchChain = vi.fn();
 const mockLoggerWarn = vi.fn();
 
 vi.mock('@wagmi/core', () => ({
   getPublicClient: (...args: any[]) => mockGetPublicClient(...args),
+  getAccount: (...args: any[]) => mockGetAccount(...args),
+  switchChain: (...args: any[]) => mockSwitchChain(...args),
 }));
 
 vi.mock('../../../utils/logger', () => ({
@@ -232,5 +242,141 @@ describe('preEstimateGasForEvmTxs', () => {
 
     expect(txs[0].transaction.gasLimit).toEqual(BigNumber.from('120000'));
     expect(txs[1].transaction).not.toHaveProperty('gasLimit');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// waitForChainSwitch
+// ---------------------------------------------------------------------------
+
+describe('waitForChainSwitch', () => {
+  const mockConfig = {} as any;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  test('resolves immediately when wallet is already on the correct chain', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 1 });
+
+    await expect(waitForChainSwitch(mockConfig, 1)).resolves.toBeUndefined();
+    expect(mockGetAccount).toHaveBeenCalledTimes(1);
+  });
+
+  test('polls until wallet reports the correct chain', async () => {
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 }) // first poll: wrong chain
+      .mockReturnValue({ chainId: 1 }); // second poll: correct chain
+
+    const p = waitForChainSwitch(mockConfig, 1);
+    await vi.advanceTimersByTimeAsync(500); // fire one poll interval
+    await expect(p).resolves.toBeUndefined();
+    expect(mockGetAccount).toHaveBeenCalledTimes(2);
+  });
+
+  test('resolves after multiple polls', async () => {
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 })
+      .mockReturnValueOnce({ chainId: 999 })
+      .mockReturnValue({ chainId: 1 });
+
+    const p = waitForChainSwitch(mockConfig, 1);
+    await vi.advanceTimersByTimeAsync(1_000); // two poll intervals
+    await expect(p).resolves.toBeUndefined();
+    expect(mockGetAccount).toHaveBeenCalledTimes(3);
+  });
+
+  test('throws ChainMismatchError after timeout', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 999 });
+
+    const p = waitForChainSwitch(mockConfig, 1, 1_000);
+    p.catch(() => {}); // prevent unhandled rejection while timers advance
+    await vi.advanceTimersByTimeAsync(1_000);
+    await expect(p).rejects.toThrow('ChainMismatchError');
+  });
+
+  test('timeout error includes chain id and duration', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 999 });
+
+    const p = waitForChainSwitch(mockConfig, 42, 2_000);
+    p.catch(() => {}); // prevent unhandled rejection while timers advance
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(p).rejects.toThrow(/chain 42/);
+    await expect(p).rejects.toThrow(/2s/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ensureWalletOnChain
+// ---------------------------------------------------------------------------
+
+describe('ensureWalletOnChain', () => {
+  const mockConfig = {} as any;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  test('returns immediately without calling switchChain when already on correct chain', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 1 });
+
+    await expect(ensureWalletOnChain(mockConfig, 1)).resolves.toBeUndefined();
+    expect(mockSwitchChain).not.toHaveBeenCalled();
+  });
+
+  test('calls switchChain with the correct arguments when chain does not match', async () => {
+    // First getAccount call (initial check) returns wrong chain;
+    // second call (inside waitForChainSwitch) returns correct chain.
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 })
+      .mockReturnValue({ chainId: 1 });
+    mockSwitchChain.mockResolvedValue(undefined);
+
+    await expect(ensureWalletOnChain(mockConfig, 1)).resolves.toBeUndefined();
+    expect(mockSwitchChain).toHaveBeenCalledWith(mockConfig, { chainId: 1 });
+  });
+
+  test('swallows switchChain rejection and continues polling', async () => {
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 }) // initial check
+      .mockReturnValueOnce({ chainId: 999 }) // waitForChainSwitch first poll
+      .mockReturnValue({ chainId: 1 }); // waitForChainSwitch second poll
+    mockSwitchChain.mockRejectedValue(new Error('User rejected'));
+
+    const p = ensureWalletOnChain(mockConfig, 1);
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(p).resolves.toBeUndefined();
+  });
+
+  test('throws ChainMismatchError when chain never switches (timeout)', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 999 });
+    mockSwitchChain.mockResolvedValue(undefined);
+
+    const p = ensureWalletOnChain(mockConfig, 1);
+    p.catch(() => {}); // prevent unhandled rejection while timers advance
+    // Advance past the full 30 s default timeout
+    await vi.advanceTimersByTimeAsync(31_000);
+    await expect(p).rejects.toThrow('ChainMismatchError');
+  });
+
+  test('does not call switchChain a second time after initial call fails', async () => {
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 })
+      .mockReturnValue({ chainId: 1 });
+    mockSwitchChain.mockRejectedValue(new Error('rejected'));
+
+    await ensureWalletOnChain(mockConfig, 1);
+    // switchChain should have been called exactly once (not retried internally)
+    expect(mockSwitchChain).toHaveBeenCalledTimes(1);
   });
 });
