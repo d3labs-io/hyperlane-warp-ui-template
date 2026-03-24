@@ -203,6 +203,8 @@ vi.mock('@wagmi/core', () => ({
 vi.mock('../../chains/rpcUtils', () => ({
   ensureWalletOnChain: (...args: any[]) => mockEnsureWalletOnChain(...args),
   preEstimateGasForEvmTxs: (...args: any[]) => mockPreEstimateGasForEvmTxs(...args),
+  // Pass through to wallet confirm — resilientConfirm is tested in rpcUtils.test.ts
+  resilientConfirm: vi.fn((walletConfirm: () => Promise<any>) => walletConfirm()),
 }));
 
 describe('useTokenTransfer', () => {
