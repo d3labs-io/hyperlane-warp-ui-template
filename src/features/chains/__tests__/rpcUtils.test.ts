@@ -337,9 +337,7 @@ describe('ensureWalletOnChain', () => {
   test('calls switchChain with the correct arguments when chain does not match', async () => {
     // First getAccount call (initial check) returns wrong chain;
     // second call (inside waitForChainSwitch) returns correct chain.
-    mockGetAccount
-      .mockReturnValueOnce({ chainId: 999 })
-      .mockReturnValue({ chainId: 1 });
+    mockGetAccount.mockReturnValueOnce({ chainId: 999 }).mockReturnValue({ chainId: 1 });
     mockSwitchChain.mockResolvedValue(undefined);
 
     await expect(ensureWalletOnChain(mockConfig, 1)).resolves.toBeUndefined();
@@ -370,9 +368,7 @@ describe('ensureWalletOnChain', () => {
   });
 
   test('does not call switchChain a second time after initial call fails', async () => {
-    mockGetAccount
-      .mockReturnValueOnce({ chainId: 999 })
-      .mockReturnValue({ chainId: 1 });
+    mockGetAccount.mockReturnValueOnce({ chainId: 999 }).mockReturnValue({ chainId: 1 });
     mockSwitchChain.mockRejectedValue(new Error('rejected'));
 
     await ensureWalletOnChain(mockConfig, 1);

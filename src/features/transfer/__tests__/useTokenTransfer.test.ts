@@ -575,7 +575,6 @@ describe('useTokenTransfer', () => {
     });
 
     it('completes transfer across multiple retries with progressive approvals (non-USDC from pruv)', async () => {
-
       // Simulates a user who:
       // 1. Approves USDC bridge fee, then stops (failure before token approval)
       // 2. Retries: USDC skipped (already approved), approves token, then stops
@@ -736,9 +735,7 @@ describe('useTokenTransfer', () => {
     });
 
     it('calls ensureWalletOnChain with wagmiConfig and the origin chainId before sending', async () => {
-      const confirm = vi
-        .fn()
-        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx' } });
+      const confirm = vi.fn().mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx' } });
       sendTransactionMock.mockResolvedValue({ hash: '0xtx', confirm });
 
       const { result } = renderHook(() => useTokenTransfer());
@@ -778,9 +775,7 @@ describe('useTokenTransfer', () => {
     });
 
     it('calls preEstimateGasForEvmTxs after ensureWalletOnChain succeeds', async () => {
-      const confirm = vi
-        .fn()
-        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx' } });
+      const confirm = vi.fn().mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx' } });
       sendTransactionMock.mockResolvedValue({ hash: '0xtx', confirm });
 
       const { result } = renderHook(() => useTokenTransfer());
