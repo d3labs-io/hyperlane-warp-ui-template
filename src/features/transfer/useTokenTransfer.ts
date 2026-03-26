@@ -19,7 +19,7 @@ import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
 import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
-import { ensureWalletOnChain, preEstimateGasForEvmTxs, resilientConfirm } from '../chains/rpcUtils';
+import { ensureWalletOnChain, preEstimateGasForEvmTxs } from '../chains/rpcUtils';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
@@ -301,12 +301,10 @@ async function executeTransfer({
           transferIndex,
           (transferStatus = txCategoryToStatuses[tx.category][1]),
         );
-        // Race wallet confirmation against direct RPC polling for EVM chains.
-        // WalletConnect behaviour varies across wallets — some fail to resolve
-        // the confirm callback even after the tx lands on-chain.
-        txReceipt = isEvm
-          ? await resilientConfirm(confirm, hash, wagmiConfig, chainId)
-          : await confirm();
+        txReceipt = await confirm();
+        if (isEvm && (txReceipt as any)?.receipt?.status === 'reverted') {
+          throw new Error('Transaction reverted on-chain');
+        }
         const description = toTitleCase(tx.category);
         logger.debug(`${description} transaction confirmed, hash:`, hash);
         toastTxSuccess(`${description} transaction sent!`, hash, origin);

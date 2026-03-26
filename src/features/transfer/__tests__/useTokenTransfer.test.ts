@@ -203,8 +203,6 @@ vi.mock('@wagmi/core', () => ({
 vi.mock('../../chains/rpcUtils', () => ({
   ensureWalletOnChain: (...args: any[]) => mockEnsureWalletOnChain(...args),
   preEstimateGasForEvmTxs: (...args: any[]) => mockPreEstimateGasForEvmTxs(...args),
-  // Pass through to wallet confirm — resilientConfirm is tested in rpcUtils.test.ts
-  resilientConfirm: vi.fn((walletConfirm: () => Promise<any>) => walletConfirm()),
 }));
 
 describe('useTokenTransfer', () => {
@@ -791,6 +789,26 @@ describe('useTokenTransfer', () => {
         11155111, // chainId
         '0xsender',
         expect.any(Array),
+      );
+    });
+
+    it('marks transfer as failed when confirm returns a reverted receipt', async () => {
+      const confirm = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx', status: 'reverted' } });
+      sendTransactionMock.mockResolvedValue({ hash: '0xtx', confirm });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(evmValues);
+      });
+
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+      expect(updateTransferStatusMock).not.toHaveBeenCalledWith(
+        0,
+        TransferStatus.ConfirmedTransfer,
+        expect.anything(),
       );
     });
   });
