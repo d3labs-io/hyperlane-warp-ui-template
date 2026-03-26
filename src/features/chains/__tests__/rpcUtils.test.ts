@@ -3,10 +3,12 @@ import { BigNumber } from 'ethers';
 import { type Chain } from 'viem';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
+  ensureWalletOnChain,
   fibonacciDelays,
   preEstimateGasForEvmTxs,
   raceViemProviderBuilder,
   resilientConfirm,
+  waitForChainSwitch,
   withWcRpcFirst,
 } from '../rpcUtils';
 
@@ -153,10 +155,14 @@ describe('withWcRpcFirst', () => {
 
 const mockEstimateGas = vi.fn();
 const mockGetPublicClient = vi.fn();
+const mockGetAccount = vi.fn();
+const mockSwitchChain = vi.fn();
 const mockLoggerWarn = vi.fn();
 
 vi.mock('@wagmi/core', () => ({
   getPublicClient: (...args: any[]) => mockGetPublicClient(...args),
+  getAccount: (...args: any[]) => mockGetAccount(...args),
+  switchChain: (...args: any[]) => mockSwitchChain(...args),
 }));
 
 vi.mock('../../../utils/logger', () => ({
@@ -263,106 +269,41 @@ describe('fibonacciDelays', () => {
 });
 
 // ---------------------------------------------------------------------------
-// resilientConfirm
+// resilientConfirm (non-Safe path)
 // ---------------------------------------------------------------------------
 
-describe('resilientConfirm', () => {
+describe('resilientConfirm (no Safe options)', () => {
   const mockConfig = {} as any;
-  const mockGetTransactionReceipt = vi.fn();
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-    mockGetPublicClient.mockReturnValue({
-      getTransactionReceipt: mockGetTransactionReceipt,
-    } as any);
-  });
 
   afterEach(() => {
-    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
-  test('resolves with wallet confirm when it wins the race', async () => {
-    const walletReceipt = { type: 'ethersV5', receipt: { hash: '0xabc' } };
+  test('resolves with the wallet confirm result', async () => {
+    const walletReceipt = { type: 'ethersV5', receipt: { hash: '0xabc', status: 'success' } };
     const walletConfirm = vi.fn().mockResolvedValue(walletReceipt);
-    // RPC never finds receipt
-    mockGetTransactionReceipt.mockRejectedValue(new Error('not found'));
 
-    const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1);
-    // Wallet resolves immediately, before the 5s initial delay even fires
-    await vi.advanceTimersByTimeAsync(100);
-    const result = await promise;
+    const result = await resilientConfirm(walletConfirm, '0xhash', mockConfig, 1);
 
     expect(result).toBe(walletReceipt);
   });
 
-  test('resolves with RPC poll when wallet confirm hangs', async () => {
-    const rpcReceipt = { status: 'success', transactionHash: '0xhash' };
-    // Wallet never resolves
-    const walletConfirm = () => new Promise<never>(() => {});
-    // RPC succeeds on first poll (after 5s initial delay)
-    mockGetTransactionReceipt.mockResolvedValue(rpcReceipt);
+  test('rejects when wallet confirm returns a reverted receipt', async () => {
+    const revertedReceipt = { type: 'ethersV5', receipt: { hash: '0xabc', status: 'reverted' } };
+    const walletConfirm = vi.fn().mockResolvedValue(revertedReceipt);
 
-    const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1);
-    // Fire the 5s initial delay timer synchronously, then let microtasks settle
-    vi.advanceTimersByTime(5100);
-    const result = await promise;
-
-    expect(result).toEqual({ type: ProviderType.Viem, receipt: rpcReceipt });
+    await expect(resilientConfirm(walletConfirm, '0xhash', mockConfig, 1)).rejects.toThrow(
+      'Transaction reverted on-chain',
+    );
   });
 
-  test('rejects when transaction is reverted on-chain', async () => {
-    const revertedReceipt = { status: 'reverted', transactionHash: '0xhash' };
-    const walletConfirm = () => new Promise<never>(() => {});
-    mockGetTransactionReceipt.mockResolvedValue(revertedReceipt);
-
-    const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1);
-    // Fire the 5s initial delay timer synchronously, then let microtasks settle
-    vi.advanceTimersByTime(5100);
-
-    await expect(promise).rejects.toThrow('Transaction reverted on-chain');
-  });
-
-  test('rejects with wallet error when both fail', async () => {
+  test('rejects with wallet error when confirm throws', async () => {
     const walletError = new Error('Wallet rejected');
-    const walletConfirm = vi.fn().mockImplementation(() => Promise.reject(walletError));
-    mockGetPublicClient.mockReturnValue(null);
+    const walletConfirm = vi.fn().mockRejectedValue(walletError);
 
-    const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1);
-
-    await expect(promise).rejects.toThrow('Wallet rejected');
-  });
-
-  test('RPC polling uses Fibonacci backoff after 5s initial delay', async () => {
-    const rpcReceipt = { status: 'success', transactionHash: '0xhash' };
-    const walletConfirm = () => new Promise<never>(() => {});
-    // Fail 3 times, then succeed on 4th call
-    mockGetTransactionReceipt
-      .mockRejectedValueOnce(new Error('not found'))
-      .mockRejectedValueOnce(new Error('not found'))
-      .mockRejectedValueOnce(new Error('not found'))
-      .mockResolvedValue(rpcReceipt);
-
-    const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1);
-
-    // 5s initial delay, then first poll fires (fails)
-    await vi.advanceTimersByTimeAsync(5100);
-    expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(1);
-
-    // Fibonacci delay 1: 1s — second poll (fails)
-    await vi.advanceTimersByTimeAsync(1100);
-    expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(2);
-
-    // Fibonacci delay 2: 1s — third poll (fails)
-    await vi.advanceTimersByTimeAsync(1100);
-    expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(3);
-
-    // Fibonacci delay 3: 2s — fourth poll (succeeds)
-    await vi.advanceTimersByTimeAsync(2100);
-    const result = await promise;
-
-    expect(mockGetTransactionReceipt).toHaveBeenCalledTimes(4);
-    expect(result).toEqual({ type: ProviderType.Viem, receipt: rpcReceipt });
+    await expect(resilientConfirm(walletConfirm, '0xhash', mockConfig, 1)).rejects.toThrow(
+      'Wallet rejected',
+    );
   });
 });
 
@@ -474,11 +415,11 @@ describe('resilientConfirm with event polling (Safe wallet)', () => {
     await expect(promise).rejects.toThrow('Transaction reverted on-chain');
   });
 
-  test('rejects with wallet error when all three legs fail', async () => {
+  test('rejects with wallet error when both legs fail', async () => {
     const walletError = new Error('Wallet rejected by user');
     const walletConfirm = vi.fn().mockImplementation(() => Promise.reject(walletError));
 
-    // No public client → both RPC and event polling fail immediately
+    // No public client → event polling fails immediately
     mockGetPublicClient.mockReturnValue(null);
 
     const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1, {
@@ -575,11 +516,12 @@ describe('resilientConfirm with event polling (Safe wallet)', () => {
     expect(result).toEqual({ type: ProviderType.Viem, receipt: onChainReceipt });
   });
 
-  test('hash-based polling still wins if it resolves before event polling', async () => {
-    const receipt = { status: 'success', transactionHash: '0xhash' };
-    const walletConfirm = () => new Promise<never>(() => {});
-    // Hash-based polling succeeds (normal wallet, not Safe)
-    mockGetTransactionReceipt.mockResolvedValue(receipt);
+  test('wallet confirm wins when it resolves before event polling fires', async () => {
+    const walletReceipt = {
+      type: 'ethersV5',
+      receipt: { transactionHash: '0xhash', status: 'success' },
+    };
+    const walletConfirm = vi.fn().mockResolvedValue(walletReceipt);
     mockGetLogs.mockResolvedValue([]);
 
     const promise = resilientConfirm(walletConfirm, '0xhash', mockConfig, 1, {
@@ -587,12 +529,120 @@ describe('resilientConfirm with event polling (Safe wallet)', () => {
       sender: '0xSender1234567890abcdef1234567890abcdef1234',
     });
 
-    // Hash-based polling resolves at 5s (before event polling starts at 15s)
-    vi.advanceTimersByTime(5100);
+    // Wallet resolves immediately before the 15s event poll initial delay fires
+    await vi.advanceTimersByTimeAsync(100);
     const result = await promise;
 
-    expect(result).toEqual({ type: ProviderType.Viem, receipt });
+    expect(result).toBe(walletReceipt);
     // getLogs should not have been called since event polling hasn't started
     expect(mockGetLogs).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// waitForChainSwitch
+// ---------------------------------------------------------------------------
+
+describe('waitForChainSwitch', () => {
+  const mockConfig = {} as any;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  test('resolves immediately when wallet is already on the correct chain', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 1 });
+
+    await expect(waitForChainSwitch(mockConfig, 1)).resolves.toBeUndefined();
+    expect(mockGetAccount).toHaveBeenCalledTimes(1);
+  });
+
+  test('polls until wallet reports the correct chain', async () => {
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 })
+      .mockReturnValue({ chainId: 1 });
+
+    const p = waitForChainSwitch(mockConfig, 1);
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(p).resolves.toBeUndefined();
+    expect(mockGetAccount).toHaveBeenCalledTimes(2);
+  });
+
+  test('throws ChainMismatchError after timeout', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 999 });
+
+    const p = waitForChainSwitch(mockConfig, 1, 1_000);
+    p.catch(() => {});
+    await vi.advanceTimersByTimeAsync(1_000);
+    await expect(p).rejects.toThrow('ChainMismatchError');
+  });
+
+  test('timeout error includes chain id and duration', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 999 });
+
+    const p = waitForChainSwitch(mockConfig, 42, 2_000);
+    p.catch(() => {});
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(p).rejects.toThrow(/chain 42/);
+    await expect(p).rejects.toThrow(/2s/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ensureWalletOnChain
+// ---------------------------------------------------------------------------
+
+describe('ensureWalletOnChain', () => {
+  const mockConfig = {} as any;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  test('returns immediately without calling switchChain when already on correct chain', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 1 });
+
+    await expect(ensureWalletOnChain(mockConfig, 1)).resolves.toBeUndefined();
+    expect(mockSwitchChain).not.toHaveBeenCalled();
+  });
+
+  test('calls switchChain with the correct arguments when chain does not match', async () => {
+    mockGetAccount.mockReturnValueOnce({ chainId: 999 }).mockReturnValue({ chainId: 1 });
+    mockSwitchChain.mockResolvedValue(undefined);
+
+    await expect(ensureWalletOnChain(mockConfig, 1)).resolves.toBeUndefined();
+    expect(mockSwitchChain).toHaveBeenCalledWith(mockConfig, { chainId: 1 });
+  });
+
+  test('swallows switchChain rejection and continues polling', async () => {
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 })
+      .mockReturnValueOnce({ chainId: 999 })
+      .mockReturnValue({ chainId: 1 });
+    mockSwitchChain.mockRejectedValue(new Error('User rejected'));
+
+    const p = ensureWalletOnChain(mockConfig, 1);
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(p).resolves.toBeUndefined();
+  });
+
+  test('throws ChainMismatchError when chain never switches (timeout)', async () => {
+    mockGetAccount.mockReturnValue({ chainId: 999 });
+    mockSwitchChain.mockResolvedValue(undefined);
+
+    const p = ensureWalletOnChain(mockConfig, 1);
+    p.catch(() => {});
+    await vi.advanceTimersByTimeAsync(31_000);
+    await expect(p).rejects.toThrow('ChainMismatchError');
   });
 });

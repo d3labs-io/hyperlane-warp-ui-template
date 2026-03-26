@@ -19,7 +19,7 @@ import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
 import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
-import { preEstimateGasForEvmTxs, resilientConfirm } from '../chains/rpcUtils';
+import { ensureWalletOnChain, preEstimateGasForEvmTxs, resilientConfirm } from '../chains/rpcUtils';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
@@ -252,6 +252,9 @@ async function executeTransfer({
 
     const isEvm = originProtocol === ProtocolType.Ethereum;
     const chainId = isEvm ? (multiProvider.getChainMetadata(origin).chainId as number) : 0;
+    if (isEvm) {
+      await ensureWalletOnChain(wagmiConfig, chainId);
+    }
 
     const hashes: string[] = [];
     let txReceipt: TypedTransactionReceipt | undefined = undefined;

@@ -134,6 +134,7 @@ vi.mock('../../chains/utils', () => ({
 }));
 
 vi.mock('../../chains/rpcUtils', () => ({
+  ensureWalletOnChain: vi.fn(() => Promise.resolve()),
   preEstimateGasForEvmTxs: vi.fn(),
   // Pass through to wallet confirm — resilientConfirm is tested in rpcUtils.test.ts
   resilientConfirm: vi.fn((walletConfirm: () => Promise<any>) => walletConfirm()),
