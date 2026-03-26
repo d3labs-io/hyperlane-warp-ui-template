@@ -791,5 +791,25 @@ describe('useTokenTransfer', () => {
         expect.any(Array),
       );
     });
+
+    it('marks transfer as failed when confirm returns a reverted receipt', async () => {
+      const confirm = vi
+        .fn()
+        .mockResolvedValue({ type: 'ethers', receipt: { hash: '0xtx', status: 'reverted' } });
+      sendTransactionMock.mockResolvedValue({ hash: '0xtx', confirm });
+
+      const { result } = renderHook(() => useTokenTransfer());
+
+      await act(async () => {
+        await result.current.triggerTransactions(evmValues);
+      });
+
+      expect(updateTransferStatusMock).toHaveBeenCalledWith(0, TransferStatus.Failed);
+      expect(updateTransferStatusMock).not.toHaveBeenCalledWith(
+        0,
+        TransferStatus.ConfirmedTransfer,
+        expect.anything(),
+      );
+    });
   });
 });

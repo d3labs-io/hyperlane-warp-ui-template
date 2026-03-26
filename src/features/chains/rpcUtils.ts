@@ -11,7 +11,11 @@
  * connector always has a working endpoint.
  */
 
-import { ChainMetadata, ProviderType, ViemProvider } from '@hyperlane-xyz/sdk';
+import {
+  ChainMetadata,
+  ProviderType,
+  ViemProvider,
+} from '@hyperlane-xyz/sdk';
 import { getAccount, getPublicClient, switchChain } from '@wagmi/core';
 import { BigNumber } from 'ethers';
 import { type Chain, createPublicClient, custom } from 'viem';
@@ -198,3 +202,4 @@ export async function ensureWalletOnChain(
   }
   await waitForChainSwitch(wagmiConfig, chainId);
 }
+

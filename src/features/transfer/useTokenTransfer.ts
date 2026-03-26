@@ -252,8 +252,9 @@ async function executeTransfer({
 
     // Pre-estimate gas via the CORS-resilient public client so wagmi doesn't
     // attempt estimation through the WalletConnect connector's rpcMap.
-    if (originProtocol === ProtocolType.Ethereum) {
-      const chainId = multiProvider.getChainMetadata(origin).chainId as number;
+    const isEvm = originProtocol === ProtocolType.Ethereum;
+    const chainId = isEvm ? (multiProvider.getChainMetadata(origin).chainId as number) : 0;
+    if (isEvm) {
       // Ensure the wallet is on the origin chain before submitting. WalletConnect
       // with MetaMask mobile can take >2 s to propagate a chain switch back to
       // wagmi's store, so we poll until the change is confirmed (up to 30 s).
@@ -301,6 +302,9 @@ async function executeTransfer({
           (transferStatus = txCategoryToStatuses[tx.category][1]),
         );
         txReceipt = await confirm();
+        if (isEvm && (txReceipt as any)?.receipt?.status === 'reverted') {
+          throw new Error('Transaction reverted on-chain');
+        }
         const description = toTitleCase(tx.category);
         logger.debug(`${description} transaction confirmed, hash:`, hash);
         toastTxSuccess(`${description} transaction sent!`, hash, origin);
