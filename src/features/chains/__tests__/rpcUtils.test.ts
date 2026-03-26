@@ -564,20 +564,32 @@ describe('waitForChainSwitch', () => {
 
   test('polls until wallet reports the correct chain', async () => {
     mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 }) // first poll: wrong chain
+      .mockReturnValue({ chainId: 1 }); // second poll: correct chain
+
+    const p = waitForChainSwitch(mockConfig, 1);
+    await vi.advanceTimersByTimeAsync(500); // fire one poll interval
+    await expect(p).resolves.toBeUndefined();
+    expect(mockGetAccount).toHaveBeenCalledTimes(2);
+  });
+
+  test('resolves after multiple polls', async () => {
+    mockGetAccount
+      .mockReturnValueOnce({ chainId: 999 })
       .mockReturnValueOnce({ chainId: 999 })
       .mockReturnValue({ chainId: 1 });
 
     const p = waitForChainSwitch(mockConfig, 1);
-    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(1_000); // two poll intervals
     await expect(p).resolves.toBeUndefined();
-    expect(mockGetAccount).toHaveBeenCalledTimes(2);
+    expect(mockGetAccount).toHaveBeenCalledTimes(3);
   });
 
   test('throws ChainMismatchError after timeout', async () => {
     mockGetAccount.mockReturnValue({ chainId: 999 });
 
     const p = waitForChainSwitch(mockConfig, 1, 1_000);
-    p.catch(() => {});
+    p.catch(() => {}); // prevent unhandled rejection while timers advance
     await vi.advanceTimersByTimeAsync(1_000);
     await expect(p).rejects.toThrow('ChainMismatchError');
   });
@@ -586,7 +598,7 @@ describe('waitForChainSwitch', () => {
     mockGetAccount.mockReturnValue({ chainId: 999 });
 
     const p = waitForChainSwitch(mockConfig, 42, 2_000);
-    p.catch(() => {});
+    p.catch(() => {}); // prevent unhandled rejection while timers advance
     await vi.advanceTimersByTimeAsync(2_000);
     await expect(p).rejects.toThrow(/chain 42/);
     await expect(p).rejects.toThrow(/2s/);
@@ -617,6 +629,8 @@ describe('ensureWalletOnChain', () => {
   });
 
   test('calls switchChain with the correct arguments when chain does not match', async () => {
+    // First getAccount call (initial check) returns wrong chain;
+    // second call (inside waitForChainSwitch) returns correct chain.
     mockGetAccount.mockReturnValueOnce({ chainId: 999 }).mockReturnValue({ chainId: 1 });
     mockSwitchChain.mockResolvedValue(undefined);
 
@@ -626,9 +640,9 @@ describe('ensureWalletOnChain', () => {
 
   test('swallows switchChain rejection and continues polling', async () => {
     mockGetAccount
-      .mockReturnValueOnce({ chainId: 999 })
-      .mockReturnValueOnce({ chainId: 999 })
-      .mockReturnValue({ chainId: 1 });
+      .mockReturnValueOnce({ chainId: 999 }) // initial check
+      .mockReturnValueOnce({ chainId: 999 }) // waitForChainSwitch first poll
+      .mockReturnValue({ chainId: 1 }); // waitForChainSwitch second poll
     mockSwitchChain.mockRejectedValue(new Error('User rejected'));
 
     const p = ensureWalletOnChain(mockConfig, 1);
@@ -641,8 +655,18 @@ describe('ensureWalletOnChain', () => {
     mockSwitchChain.mockResolvedValue(undefined);
 
     const p = ensureWalletOnChain(mockConfig, 1);
-    p.catch(() => {});
+    p.catch(() => {}); // prevent unhandled rejection while timers advance
+    // Advance past the full 30 s default timeout
     await vi.advanceTimersByTimeAsync(31_000);
     await expect(p).rejects.toThrow('ChainMismatchError');
+  });
+
+  test('does not call switchChain a second time after initial call fails', async () => {
+    mockGetAccount.mockReturnValueOnce({ chainId: 999 }).mockReturnValue({ chainId: 1 });
+    mockSwitchChain.mockRejectedValue(new Error('rejected'));
+
+    await ensureWalletOnChain(mockConfig, 1);
+    // switchChain should have been called exactly once (not retried internally)
+    expect(mockSwitchChain).toHaveBeenCalledTimes(1);
   });
 });

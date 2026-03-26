@@ -217,7 +217,7 @@ async function pollForContractEvent(
   const currentBlock = await publicClient.getBlockNumber();
   const startBlock = currentBlock > 10n ? currentBlock - 10n : 0n;
 
-  // Wait before first poll — give hash-based polling a chance first
+  // Wait before first poll — give wallet confirm a chance first
   await abortableSleep(EVENT_POLL_INITIAL_DELAY_MS, signal);
 
   const delays = fibonacciDelays();
@@ -311,7 +311,7 @@ const CHAIN_SWITCH_TIMEOUT_MS = 30_000;
  *
  * WalletConnect with MetaMask mobile can take several seconds after switchChain
  * resolves before the wagmi store reflects the new chain. Polling here avoids
- * a hard-coded sleep which is often too short.
+ * the hard-coded 2 s sleep in @hyperlane-xyz/widgets which is often too short.
  */
 export async function waitForChainSwitch(
   wagmiConfig: WagmiConfig,
