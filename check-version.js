@@ -1,5 +1,15 @@
 const fs = require('fs');
-const pkg = require('./version.json');
+const path = require('path');
+
+const versionPath = path.resolve(__dirname, 'version.json');
+
+if (!fs.existsSync(versionPath)) {
+  const initialPkg = { version: '12.1.1' };
+  fs.writeFileSync(versionPath, JSON.stringify(initialPkg, null, 2));
+  console.log('Created version.json with version 12.1.1');
+}
+
+const pkg = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
 
 const currentVersion = pkg.version;
 let [major, minor, patch] = currentVersion.split('.');
