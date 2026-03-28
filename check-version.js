@@ -30,7 +30,7 @@ if (patch === 9) {
 
 if (newVersion !== currentVersion) {
   pkg.version = newVersion;
-  fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+  fs.writeFileSync('./version.json', JSON.stringify(pkg, null, 2));
   console.log(`Version updated to ${newVersion}`);
 } else {
   console.log('No version update required');
