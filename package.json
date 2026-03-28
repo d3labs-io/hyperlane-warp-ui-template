@@ -1,7 +1,7 @@
 {
   "name": "@hyperlane-xyz/warp-ui-template",
   "description": "A web app template for building Hyperlane Warp Route UIs",
-  "version": "12.1.0",
+  "version": "12.1.1",
   "author": "J M Rossy",
   "dependencies": {
     "@chakra-ui/next-js": "^2.4.2",
@@ -127,6 +127,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist cache .next",
+    "prebuild": "node check-version.js",
     "dev": "next dev",
     "build": "NODE_OPTIONS=\"--max-old-space-size=4192\" next build",
     "typecheck": "tsc",
