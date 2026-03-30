@@ -36,7 +36,7 @@ jobs:
 
       - name: pnpm-install
         run: |
-          pnpm install --frozen-lockfile .
+          pnpm install --frozen-lockfile
           CHANGES=$(git status -s)
           if [[ ! -z $CHANGES ]]; then
             echo "Changes found: $CHANGES"
