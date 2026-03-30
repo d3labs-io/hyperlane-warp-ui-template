@@ -9,8 +9,8 @@ const { isApproveRequiredAdapterMock } = vi.hoisted(() => {
   return { isApproveRequiredAdapterMock };
 });
 
-vi.mock('../hooks', () => {
-  const actual = vi.importActual<any>('../hooks');
+vi.mock('../hooks', async () => {
+  const actual = await vi.importActual<typeof import('../hooks')>('../hooks');
   return {
     ...actual,
     useWarpCore: vi
@@ -26,9 +26,16 @@ vi.mock('@hyperlane-xyz/widgets', () => {
   };
 });
 
-vi.mock('../../chains/hooks', () => ({
-  useMultiProvider: vi.fn().mockReturnValue({}),
-}));
+vi.mock('../../chains/hooks', async () => {
+  const actual = await vi.importActual<typeof import('../../chains/hooks')>('../../chains/hooks');
+  const mockMultiProvider = {
+    getKnownChainNames: vi.fn().mockReturnValue([]),
+  };
+  return {
+    ...actual,
+    useMultiProvider: vi.fn().mockReturnValue(mockMultiProvider),
+  };
+});
 
 vi.mock('@hyperlane-xyz/sdk', async () => {
   const actual = await vi.importActual<typeof import('@hyperlane-xyz/sdk')>('@hyperlane-xyz/sdk');

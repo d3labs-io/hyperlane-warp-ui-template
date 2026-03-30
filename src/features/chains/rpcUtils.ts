@@ -85,7 +85,7 @@ export function raceViemProviderBuilder(
     transport: raceTransport(rpcUrls.map((r) => r.http)),
   });
 
-  return { type: ProviderType.Viem, provider: client as ViemProvider['provider'] };
+  return { type: ProviderType.Viem, provider: client as unknown as ViemProvider['provider'] };
 }
 
 // ---------------------------------------------------------------------------

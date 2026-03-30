@@ -2,19 +2,18 @@ import { IToken, TokenAmount } from '@hyperlane-xyz/sdk';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock dependencies
-vi.mock('@hyperlane-xyz/widgets', () => ({
-  useAccounts: vi.fn(),
-  getAccountAddressAndPubKey: vi.fn(),
-}));
-
-vi.mock('../../chains/hooks', () => ({
-  useMultiProvider: vi.fn(),
-}));
-
 vi.mock('../../tokens/hooks', () => ({
   useWarpCore: vi.fn(),
   getTokenByIndex: vi.fn(),
+  getWarpCoreQueryKey: vi.fn(),
+}));
+
+vi.mock('@hyperlane-xyz/widgets', () => ({
+  useAccounts: vi.fn().mockReturnValue({ accounts: {} }),
+  getAccountAddressAndPubKey: vi.fn().mockReturnValue({
+    address: '0xsender',
+    publicKey: Promise.resolve('0xpub'),
+  }),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -27,35 +26,26 @@ vi.mock('../../../utils/logger', () => ({
   },
 }));
 
-import { getAccountAddressAndPubKey, useAccounts } from '@hyperlane-xyz/widgets';
 import { useQuery } from '@tanstack/react-query';
-import { useMultiProvider } from '../../chains/hooks';
-import { getTokenByIndex, useWarpCore } from '../../tokens/hooks';
+import { getTokenByIndex, getWarpCoreQueryKey, useWarpCore } from '../../tokens/hooks';
 import { TransferFormValues } from '../types';
 import { useFeeQuotes } from '../useFeeQuotes';
 
 describe('useFeeQuotes', () => {
-  const mockMultiProvider = { getChainName: vi.fn() };
   const mockWarpCore = {
-    estimateTransferRemoteFees: vi.fn(),
+    tokens: [],
+    multiProvider: { getChainMetadata: vi.fn() },
   };
-  const mockAccounts = [{ address: '0x123' }];
-  const mockSender = '0x123';
-  const mockSenderPubKey = Promise.resolve('0xpubkey');
   const mockToken = { symbol: 'USDC', decimals: 6 } as IToken;
   const mockInterchainQuote = new TokenAmount(100n, mockToken);
   const mockLocalQuote = new TokenAmount(50n, mockToken);
+  const mockWarpCoreKey = 'mock-warp-core-key';
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useMultiProvider as any).mockReturnValue(mockMultiProvider);
     (useWarpCore as any).mockReturnValue(mockWarpCore);
-    (useAccounts as any).mockReturnValue({ accounts: mockAccounts });
-    (getAccountAddressAndPubKey as any).mockReturnValue({
-      address: mockSender,
-      publicKey: mockSenderPubKey,
-    });
     (getTokenByIndex as any).mockReturnValue(mockToken);
+    (getWarpCoreQueryKey as any).mockReturnValue(mockWarpCoreKey);
   });
 
   it('should return loading, error, and fees properties', () => {
@@ -105,7 +95,7 @@ describe('useFeeQuotes', () => {
 
     expect(useQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['useFeeQuotes', 'polygon', 0, mockSender, mockSenderPubKey],
+        queryKey: ['useFeeQuotes', 'ethereum', 'polygon', 0, mockWarpCoreKey, '0xsender'],
         queryFn: expect.any(Function),
         enabled: true,
         refetchInterval: 15_000,
@@ -236,33 +226,6 @@ describe('useFeeQuotes', () => {
     expect(result.current.fees).toBeNull();
   });
 
-  it('should call getAccountAddressAndPubKey with correct parameters', () => {
-    (useQuery as any).mockReturnValue({
-      isLoading: false,
-      isError: false,
-      data: null,
-    });
-
-    renderHook(() =>
-      useFeeQuotes(
-        {
-          origin: 'ethereum',
-          destination: 'polygon',
-          tokenIndex: 0,
-          amount: '100',
-          recipient: '0x123',
-        },
-        true,
-      ),
-    );
-
-    expect(getAccountAddressAndPubKey).toHaveBeenCalledWith(
-      mockMultiProvider,
-      'ethereum',
-      mockAccounts,
-    );
-  });
-
   it('should use correct refetch interval', () => {
     (useQuery as any).mockReturnValue({
       isLoading: false,
@@ -317,7 +280,7 @@ describe('useFeeQuotes', () => {
     expect(useQuery).toHaveBeenCalledTimes(2);
     expect(useQuery).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        queryKey: ['useFeeQuotes', 'arbitrum', 1, mockSender, mockSenderPubKey],
+        queryKey: ['useFeeQuotes', 'ethereum', 'arbitrum', 1, mockWarpCoreKey, '0xsender'],
       }),
     );
   });
