@@ -225,8 +225,12 @@ function ChainSelectSection({ isReview }: { isReview: boolean }) {
     return { originToken, destinationToken };
   }, [values.tokenIndex, values.destination, warpCore]);
 
-  const setTokenOnChainChange = (origin: string, destination: string) => {
-    const tokenIndex = getTokenIndexFromChains(warpCore, null, origin, destination);
+  const setTokenOnChainChange = (
+    origin: string,
+    destination: string,
+    addressOrDenom: string | null = null,
+  ) => {
+    const tokenIndex = getTokenIndexFromChains(warpCore, addressOrDenom, origin, destination);
     const token = getTokenByIndex(warpCore, tokenIndex);
     updateQueryParam(WARP_QUERY_PARAMS.TOKEN, token?.addressOrDenom);
     setFieldValue('tokenIndex', tokenIndex);
@@ -245,7 +249,7 @@ function ChainSelectSection({ isReview }: { isReview: boolean }) {
   const onSwapChain = (origin: string, destination: string) => {
     updateQueryParam(WARP_QUERY_PARAMS.ORIGIN, origin);
     updateQueryParam(WARP_QUERY_PARAMS.DESTINATION, destination);
-    setTokenOnChainChange(origin, destination);
+    setTokenOnChainChange(origin, destination, destinationToken?.addressOrDenom ?? null);
     setOriginChainName(origin);
   };
 
