@@ -148,6 +148,16 @@ vi.mock('../../chains/utils', () => ({
   getChainDisplayName: getChainDisplayNameMock,
 }));
 
+vi.mock('../../chains/rpcUtils', () => ({
+  ensureWalletOnChain: vi.fn(() => Promise.resolve()),
+  preEstimateGasForEvmTxs: vi.fn(),
+}));
+
+vi.mock('../../chains/safeWalletUtils', () => ({
+  // Pass through to wallet confirm — resilientConfirm is tested in safeWalletUtils.test.ts
+  resilientConfirm: vi.fn((walletConfirm: () => Promise<any>) => walletConfirm()),
+}));
+
 vi.mock('../../tokens/hooks', () => ({
   useWarpCore: () => warpCoreMock,
   getTokenByIndex: getTokenByIndexMock,
