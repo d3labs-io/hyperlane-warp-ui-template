@@ -19,17 +19,21 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: 'package.json'
+          node-version-file: '.nvmrc'
 
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
         run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Cache pnpm store
+      - name: Cache pnpm store and modules
         uses: actions/cache@v4
         with:
-          path: ${{ steps.pnpm-store.outputs.path }}
+          path: |
+            ${{ steps.pnpm-store.outputs.path }}
+            node_modules/.pnpm
+            node_modules/.modules.yaml
+            node_modules/.pnpm-lock.yaml
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
@@ -52,17 +56,21 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: 'package.json'
+          node-version-file: '.nvmrc'
 
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
         run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Cache pnpm store
+      - name: Cache pnpm store and modules
         uses: actions/cache@v4
         with:
-          path: ${{ steps.pnpm-store.outputs.path }}
+          path: |
+            ${{ steps.pnpm-store.outputs.path }}
+            node_modules/.pnpm
+            node_modules/.modules.yaml
+            node_modules/.pnpm-lock.yaml
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
@@ -83,17 +91,21 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: 'package.json'
+          node-version-file: '.nvmrc'
 
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
         run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Cache pnpm store
+      - name: Cache pnpm store and modules
         uses: actions/cache@v4
         with:
-          path: ${{ steps.pnpm-store.outputs.path }}
+          path: |
+            ${{ steps.pnpm-store.outputs.path }}
+            node_modules/.pnpm
+            node_modules/.modules.yaml
+            node_modules/.pnpm-lock.yaml
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
@@ -118,17 +130,21 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: 'package.json'
+          node-version-file: '.nvmrc'
 
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
         run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Cache pnpm store
+      - name: Cache pnpm store and modules
         uses: actions/cache@v4
         with:
-          path: ${{ steps.pnpm-store.outputs.path }}
+          path: |
+            ${{ steps.pnpm-store.outputs.path }}
+            node_modules/.pnpm
+            node_modules/.modules.yaml
+            node_modules/.pnpm-lock.yaml
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
@@ -147,17 +163,21 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: 'package.json'
+          node-version-file: '.nvmrc'
 
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
         run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Cache pnpm store
+      - name: Cache pnpm store and modules
         uses: actions/cache@v4
         with:
-          path: ${{ steps.pnpm-store.outputs.path }}
+          path: |
+            ${{ steps.pnpm-store.outputs.path }}
+            node_modules/.pnpm
+            node_modules/.modules.yaml
+            node_modules/.pnpm-lock.yaml
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
