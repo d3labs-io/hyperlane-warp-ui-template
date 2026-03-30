@@ -85,7 +85,7 @@
     "@eslint/js": "^9.39.4",
     "@next/bundle-analyzer": "^15.5.14",
     "@tanstack/eslint-plugin-query": "^5.95.0",
-    "@types/node": "^22.19.15",
+    "@types/node": "^24.10.9",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
@@ -109,6 +109,9 @@
     "vitest": "^3.2.4",
     "yaml": "^2.8.3",
     "yaml-loader": "^0.8.1"
+  },
+  "engines": {
+    "node": ">=24"
   },
   "browserList": [
     "not dead",
