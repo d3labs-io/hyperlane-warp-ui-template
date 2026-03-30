@@ -20,6 +20,7 @@ import { config } from '../../consts/config';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
 import { ensureWalletOnChain, preEstimateGasForEvmTxs } from '../chains/rpcUtils';
+import { resilientConfirm } from '../chains/safeWalletUtils';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
@@ -250,15 +251,10 @@ async function executeTransfer({
       }
     }
 
-    // Pre-estimate gas via the CORS-resilient public client so wagmi doesn't
-    // attempt estimation through the WalletConnect connector's rpcMap.
-    if (originProtocol === ProtocolType.Ethereum) {
-      const chainId = multiProvider.getChainMetadata(origin).chainId as number;
-      // Ensure the wallet is on the origin chain before submitting. WalletConnect
-      // with MetaMask mobile can take >2 s to propagate a chain switch back to
-      // wagmi's store, so we poll until the change is confirmed (up to 30 s).
+    const isEvm = originProtocol === ProtocolType.Ethereum;
+    const chainId = isEvm ? (multiProvider.getChainMetadata(origin).chainId as number) : 0;
+    if (isEvm) {
       await ensureWalletOnChain(wagmiConfig, chainId);
-      await preEstimateGasForEvmTxs(wagmiConfig, chainId, sender, txs as any);
     }
 
     const hashes: string[] = [];
@@ -286,6 +282,15 @@ async function executeTransfer({
       hashes.push(hash);
     } else {
       for (const tx of txs) {
+        // Estimate gas right before sending each tx via the CORS-resilient
+        // public client so wagmi doesn't fall back to the WalletConnect
+        // connector's rpcMap (which may be CORS-blocked). Doing this per-tx
+        // (rather than upfront for all txs) ensures that when we reach
+        // transferRemote, any prior approvals are already confirmed on-chain
+        // and the simulation succeeds with the correct allowance state.
+        if (isEvm) {
+          await preEstimateGasForEvmTxs(wagmiConfig, chainId, sender, [tx as any]);
+        }
         updateTransferStatus(
           transferIndex,
           (transferStatus = txCategoryToStatuses[tx.category][0]),
@@ -300,12 +305,27 @@ async function executeTransfer({
           transferIndex,
           (transferStatus = txCategoryToStatuses[tx.category][1]),
         );
-        txReceipt = await confirm();
+        // Race wallet confirmation against direct RPC polling for EVM chains.
+        // WalletConnect behaviour varies across wallets — some fail to resolve
+        // the confirm callback even after the tx lands on-chain.
+        // Also pass contract address + sender for event-based fallback which
+        // handles Safe (Gnosis) wallets that return a safeTxHash instead of
+        // an on-chain txHash.
+        txReceipt = isEvm
+          ? await resilientConfirm(confirm, hash, wagmiConfig, chainId, {
+              contractAddress: (tx.transaction as Record<string, any>).to,
+              sender,
+            })
+          : await confirm();
+        // Extract the real on-chain txHash from the receipt. This may differ
+        // from `hash` when a Safe wallet returns a safeTxHash instead of the
+        // actual on-chain hash (detected via event-based polling).
+        const confirmedHash = (txReceipt?.receipt as Record<string, any>)?.transactionHash ?? hash;
         const description = toTitleCase(tx.category);
-        logger.debug(`${description} transaction confirmed, hash:`, hash);
-        toastTxSuccess(`${description} transaction sent!`, hash, origin);
+        logger.debug(`${description} transaction confirmed, hash:`, confirmedHash);
+        toastTxSuccess(`${description} transaction sent!`, confirmedHash, origin);
 
-        hashes.push(hash);
+        hashes.push(confirmedHash);
       }
     }
 

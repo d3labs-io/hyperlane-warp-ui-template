@@ -164,7 +164,10 @@ vi.mock('@wagmi/core', () => ({
 }));
 
 vi.mock('../../../utils/logger', () => ({
-  logger: { warn: (...args: any[]) => mockLoggerWarn(...args) },
+  logger: {
+    warn: (...args: any[]) => mockLoggerWarn(...args),
+    debug: vi.fn(),
+  },
 }));
 
 describe('preEstimateGasForEvmTxs', () => {
