@@ -1,11 +1,11 @@
 import { ChainMetadata, isRpcHealthy } from '@hyperlane-xyz/sdk';
 import { ProtocolType } from '@hyperlane-xyz/utils';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FormWarningBanner } from '../../components/banner/FormWarningBanner';
 import { logger } from '../../utils/logger';
 import { ChainSelectListModal } from './ChainSelectModal';
-import { useMultiProvider } from './hooks';
+import { getMultiProviderQueryKey, useMultiProvider } from './hooks';
 import { getChainDisplayName } from './utils';
 
 export function ChainConnectionWarning({
@@ -16,12 +16,34 @@ export function ChainConnectionWarning({
   destination: ChainName;
 }) {
   const multiProvider = useMultiProvider();
-  const originMetadata = multiProvider.getChainMetadata(origin);
-  const destinationMetadata = multiProvider.getChainMetadata(destination);
+  const originChainMetadata = useMemo(
+    () => multiProvider.getChainMetadata(origin),
+    [multiProvider, origin],
+  );
+  const destinationChainMetadata = useMemo(
+    () => multiProvider.getChainMetadata(destination),
+    [multiProvider, destination],
+  );
+  const multiProviderKey = getMultiProviderQueryKey(multiProvider);
 
   const { data } = useQuery({
-    queryKey: ['ChainConnectionWarning', originMetadata, destinationMetadata],
-    queryFn: async () => {
+    queryKey: [
+      'ChainConnectionWarning',
+      origin,
+      destination,
+      multiProviderKey,
+      originChainMetadata,
+      destinationChainMetadata,
+    ],
+    queryFn: async ({ queryKey }) => {
+      const [, , , , originMetadata, destinationMetadata] = queryKey as [
+        string,
+        ChainName,
+        ChainName,
+        string,
+        ChainMetadata,
+        ChainMetadata,
+      ];
       const isOriginHealthy = await checkRpcHealth(originMetadata);
       const isDestinationHealthy = await checkRpcHealth(destinationMetadata);
       return { isOriginHealthy, isDestinationHealthy };
@@ -31,13 +53,13 @@ export function ChainConnectionWarning({
 
   const unhealthyChain =
     data &&
-    ((!data.isOriginHealthy && originMetadata) ||
-      (!data.isDestinationHealthy && destinationMetadata) ||
+    ((!data.isOriginHealthy && originChainMetadata) ||
+      (!data.isDestinationHealthy && destinationChainMetadata) ||
       undefined);
 
   const displayName = getChainDisplayName(
     multiProvider,
-    unhealthyChain?.name || originMetadata.name,
+    unhealthyChain?.name || originChainMetadata.name,
     true,
   );
 

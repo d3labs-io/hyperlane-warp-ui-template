@@ -10,6 +10,17 @@ export function useWarpCore() {
   return useStore((s) => s.warpCore);
 }
 
+export function getTokenQueryKey(token?: IToken) {
+  if (!token) return undefined;
+  const addressOrSymbol = token.addressOrDenom ?? token.symbol ?? token.name ?? 'unknown';
+  return `${token.chainName}:${addressOrSymbol}`;
+}
+
+export function getWarpCoreQueryKey(warpCore?: WarpCore) {
+  if (!warpCore) return undefined;
+  return warpCore.tokens.map((token) => getTokenQueryKey(token) ?? '').join('|');
+}
+
 export function useTokens() {
   return useWarpCore().tokens;
 }

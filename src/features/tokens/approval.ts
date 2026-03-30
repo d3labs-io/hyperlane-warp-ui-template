@@ -1,21 +1,22 @@
+/* eslint-disable @tanstack/query/exhaustive-deps */
 import { EvmTokenAdapter, IToken } from '@hyperlane-xyz/sdk';
 import { useAccountAddressForChain } from '@hyperlane-xyz/widgets';
 import { useQuery } from '@tanstack/react-query';
 import { useToastError } from '../../components/toast/useToastError';
 import { config } from '../../consts/config';
-import { useMultiProvider } from '../chains/hooks';
-import { useWarpCore } from './hooks';
+import { getMultiProviderQueryKey, useMultiProvider } from '../chains/hooks';
+import { getTokenQueryKey, getWarpCoreQueryKey, useWarpCore } from './hooks';
 
 export function useIsApproveRequired(token?: IToken, amount?: string, enabled = true) {
   const multiProvider = useMultiProvider();
   const warpCore = useWarpCore();
+  const warpCoreKey = getWarpCoreQueryKey(warpCore);
 
   const owner = useAccountAddressForChain(multiProvider, token?.chainName);
+  const tokenKey = getTokenQueryKey(token);
 
   const { isLoading, isError, error, data } = useQuery({
-    // The Token class is not serializable, so we can't use it as a key
-    // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryKey: ['useIsApproveRequired', owner, amount, token?.addressOrDenom],
+    queryKey: ['useIsApproveRequired', owner, amount, tokenKey, warpCoreKey],
     queryFn: async () => {
       if (!token || !owner || !amount) return false;
       return warpCore.isApproveRequired({ originTokenAmount: token.amount(amount), owner });
@@ -36,6 +37,7 @@ export function useIsUSDCBridgeFeeApproveRequired(
 ) {
   const multiProvider = useMultiProvider();
   const owner = useAccountAddressForChain(multiProvider, originChain);
+  const multiProviderKey = getMultiProviderQueryKey(multiProvider);
 
   const shouldCheck = enabled && !!spenderAddress && !!owner;
 
@@ -46,6 +48,7 @@ export function useIsUSDCBridgeFeeApproveRequired(
       spenderAddress,
       destination,
       originChain,
+      multiProviderKey,
     ],
     queryFn: async () => {
       if (!owner || !spenderAddress) return false;

@@ -290,6 +290,7 @@ describe('fetchMaxAmount mutationFn', () => {
     expect(mockWarpCore.getMaxTransferAmount).toHaveBeenCalledWith({
       balance: baseParams.balance,
       destination: baseParams.destination,
+      recipient: '0x1234',
       sender: '0x1234',
       senderPubKey: 'pubkey',
     });
@@ -335,5 +336,31 @@ describe('fetchMaxAmount mutationFn', () => {
       'Cannot simulate transfer, Ethereum native balance may be insufficient.',
     );
     expect(result).toBeUndefined();
+  });
+
+  it('returns existing balance for pruv origins when fee data is missing', async () => {
+    const balance = { id: 'balance' };
+    vi.mocked(getAccountAddressAndPubKey).mockReturnValue({
+      address: '0x9999',
+      publicKey: Promise.resolve('pubkey'),
+    } as any);
+    mockWarpCore.getMaxTransferAmount.mockRejectedValue(
+      new Error('Invalid fee data, neither 1559 nor legacy'),
+    );
+
+    renderHook(() => useFetchMaxAmount());
+
+    const result = await capturedMutationFn!({
+      ...baseParams,
+      balance,
+      origin: 'pruv-mainnet',
+    });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Skipping max amount fetch due to missing fee data',
+      expect.any(Error),
+    );
+    expect(toast.warn).not.toHaveBeenCalled();
+    expect(result).toBe(balance);
   });
 });

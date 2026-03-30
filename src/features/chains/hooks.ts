@@ -1,8 +1,14 @@
+import { MultiProtocolProvider } from '@hyperlane-xyz/sdk';
 import { useStore } from '../store';
 import { getChainDisplayName } from './utils';
 
 export function useMultiProvider() {
   return useStore((s) => s.multiProvider);
+}
+
+export function getMultiProviderQueryKey(multiProvider?: MultiProtocolProvider) {
+  if (!multiProvider) return undefined;
+  return multiProvider.getKnownChainNames().slice().sort().join('|');
 }
 
 // Ensures that the multiProvider has been populated during the onRehydrateStorage hook above,
