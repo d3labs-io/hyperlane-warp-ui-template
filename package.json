@@ -137,7 +137,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "start": "next start",
-    "test": "vitest --watch false",
+    "test": "node check-version.js && vitest --watch false",
     "test:coverage": "vitest run --coverage",
     "prettier": "prettier --write ./src",
     "postinstall": "patch-package",
