@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { ReactNode } from 'react';
-import pkg from '../../../version.json';
+import pkgData from '../../../version.json';
 import { links } from '../../consts/links';
+const pkg = pkgData || { version: '12.1.1' };
 
 type FooterLink = {
   title: string;
