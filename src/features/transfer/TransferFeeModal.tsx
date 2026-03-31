@@ -1,6 +1,5 @@
 import { WarpCoreFeeEstimate } from '@hyperlane-xyz/sdk';
 import { Modal, Skeleton, Tooltip } from '@hyperlane-xyz/widgets';
-import Link from 'next/link';
 
 export function TransferFeeModal({
   isOpen,
@@ -60,17 +59,6 @@ export function TransferFeeModal({
             )}
           </div>
         )}
-        <span className="mt-2">
-          Read more about{' '}
-          <Link
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary-500 underline"
-          >
-            transfer fees.
-          </Link>
-        </span>
       </div>
     </Modal>
   );
