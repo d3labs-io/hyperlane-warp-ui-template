@@ -44,18 +44,18 @@ Pruv Bridge is a Hyperlane-powered web application for moving fungible tokens an
 
 ## Quick start
 
-1. Duplicate the sample env file:
+1. Create `.env.local` from `.env.example` and populate it with the required specs (e.g., `NEXT_PUBLIC_WALLET_CONNECT_ID`, `NEXT_PUBLIC_RPC_OVERRIDES`, `NEXT_PUBLIC_BRIDGE_DASHBOARD_URL` and any custom overrides you need).
+2. Install dependencies and run postinstall patches:
    ```sh
-   cp .env.example .env.local
+   pnpm install
    ```
-2. Edit `.env.local` and set `NEXT_PUBLIC_WALLET_CONNECT_ID` (and any other overrides you need).
-3. Install dependencies and patch packages:
+3. Build the app once before running the development server (this also runs `check-version.js`):
    ```sh
-   yarn && yarn postinstall
+   pnpm build
    ```
 4. Start the dev server:
    ```sh
-   yarn dev
+   pnpm dev
    ```
 5. Visit `http://localhost:3000` and connect a wallet to try a bridge transfer.
 
@@ -101,6 +101,7 @@ pnpm run typecheck
 - `src/features/sanctions` & `src/features/limits` – Reusable guards for sanctioned addresses and per-route amount caps.
 - `src/consts` – App-wide configuration (`config.ts`), registry/chain definitions, tip/branding toggles, and global lists (blacklist, warp route whitelist).
 - `CUSTOMIZE.md` – Step-by-step guide for branding, token lists, chain metadata, and asset replacement.
+
 ```sh
 # Format code using Prettier
 pnpm run prettier

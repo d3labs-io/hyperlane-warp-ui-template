@@ -82,6 +82,19 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  turbopack: {
+    rules: {
+      '*.yaml': {
+        loaders: ['yaml-loader'],
+        as: '*.js',
+      },
+      '*.yml': {
+        loaders: ['yaml-loader'],
+        as: '*.js',
+      },
+    },
+  },
+
   webpack(config) {
     config.module.rules.push({
       test: /\.ya?ml$/,
@@ -116,9 +129,16 @@ const nextConfig = {
 
   experimental: {
     webpackBuildWorker: true,
+    parallelServerCompiles: true,
     parallelServerBuildTraces: true,
     webpackMemoryOptimizations: true,
     serverSourceMaps: false,
+    optimizePackageImports: [
+      '@hyperlane-xyz/registry',
+      '@hyperlane-xyz/sdk',
+      '@hyperlane-xyz/utils',
+      '@hyperlane-xyz/widgets',
+    ],
   },
 
   reactStrictMode: true,
