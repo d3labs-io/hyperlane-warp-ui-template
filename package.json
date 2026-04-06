@@ -1,7 +1,7 @@
 {
   "name": "@hyperlane-xyz/warp-ui-template",
   "description": "A web app template for building Hyperlane Warp Route UIs",
-  "version": "12.1.0",
+  "version": "12.1.1",
   "author": "J M Rossy",
   "dependencies": {
     "@chakra-ui/next-js": "^2.4.2",
@@ -85,7 +85,7 @@
     "@eslint/js": "^9.39.4",
     "@next/bundle-analyzer": "^15.5.14",
     "@tanstack/eslint-plugin-query": "^5.95.0",
-    "@types/node": "^22.19.15",
+    "@types/node": "^24.10.9",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
@@ -110,6 +110,9 @@
     "yaml": "^2.8.3",
     "yaml-loader": "^0.8.1"
   },
+  "engines": {
+    "node": ">=24"
+  },
   "browserList": [
     "not dead",
     "ie 11",
@@ -127,13 +130,14 @@
   },
   "scripts": {
     "clean": "rm -rf dist cache .next",
+    "prebuild": "node check-version.js",
     "dev": "next dev",
     "build": "NODE_OPTIONS=\"--max-old-space-size=4192\" next build",
     "typecheck": "tsc",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "start": "next start",
-    "test": "vitest --watch false",
+    "test": "node check-version.js && vitest --watch false",
     "test:coverage": "vitest run --coverage",
     "prettier": "prettier --write ./src",
     "postinstall": "patch-package",

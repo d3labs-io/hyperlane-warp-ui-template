@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import pkgData from '../../../version.json';
 import { links } from '../../consts/links';
+const pkg = pkgData || { version: '12.1.1' };
 
 type FooterLink = {
   title: string;
@@ -55,6 +57,7 @@ function FooterNav() {
           </li>
         ))}
       </ul>
+      <p className="mr-7 mt-1.5 text-right text-sm text-gray-400">Build version {pkg?.version}</p>
     </nav>
   );
 }
