@@ -211,8 +211,8 @@ vi.mock('@wagmi/core', () => ({
 }));
 
 vi.mock('../../chains/rpcUtils', () => ({
-  ensureWalletOnChain: (...args: any[]) => mockEnsureWalletOnChain(...args),
-  preEstimateGasForEvmTxs: (...args: any[]) => mockPreEstimateGasForEvmTxs(...args),
+  ensureWalletOnChain: mockEnsureWalletOnChain,
+  preEstimateGasForEvmTxs: mockPreEstimateGasForEvmTxs,
 }));
 
 describe('useTokenTransfer', () => {
