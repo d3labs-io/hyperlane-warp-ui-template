@@ -298,15 +298,15 @@ function TokenSection({
 
 function AmountSection({ isNft, isReview }: { isNft: boolean; isReview: boolean }) {
   const { values } = useFormikContext<TransferFormValues>();
-  const { balance } = useOriginBalance(values);
+  const { balance, isLoading } = useOriginBalance(values);
 
   return (
     <div className="flex-1">
       <div className="flex justify-between pr-1">
-        <label htmlFor="amount" className="block pl-0.5 text-sm text-gray-600">
+        <label htmlFor="amount" className="block content-end pl-0.5 text-sm text-gray-600">
           Amount
         </label>
-        <TokenBalance label="My balance" balance={balance} />
+        <TokenBalance label="My balance" balance={balance} isLoading={isLoading} />
       </div>
       {isNft ? (
         <SelectOrInputTokenIds disabled={isReview} />
@@ -329,16 +329,16 @@ function AmountSection({ isNft, isReview }: { isNft: boolean; isReview: boolean 
 
 function RecipientSection({ isReview }: { isReview: boolean }) {
   const { values } = useFormikContext<TransferFormValues>();
-  const { balance } = useDestinationBalance(values);
+  const { balance, isLoading } = useDestinationBalance(values);
   useRecipientBalanceWatcher(values.recipient, balance);
 
   return (
     <div className="mt-4">
       <div className="flex justify-between pr-1">
-        <label htmlFor="recipient" className="block pl-0.5 text-sm text-gray-600">
+        <label htmlFor="recipient" className="block content-end pl-0.5 text-sm text-gray-600">
           Recipient address
         </label>
-        <TokenBalance label="Remote balance" balance={balance} />
+        <TokenBalance label="Remote balance" balance={balance} isLoading={isLoading} />
       </div>
       <div className="relative w-full">
         <TextField
@@ -353,11 +353,31 @@ function RecipientSection({ isReview }: { isReview: boolean }) {
   );
 }
 
-function TokenBalance({ label, balance }: { label: string; balance?: TokenAmount | null }) {
+function TokenBalance({
+  label,
+  balance,
+  isLoading = false,
+}: {
+  label: string;
+  balance?: TokenAmount | null;
+  isLoading?: boolean;
+}) {
   const value = balance?.getDecimalFormattedAmount().toFixed(4) || '0.0000';
+  const symbol = balance?.token.symbol ? ` ${balance.token.symbol}` : '';
   return (
-    <div className="text-right text-xs text-gray-600">
-      {`${label}: ${value}`} {balance?.token.symbol}
+    <div className="flex min-w-0 flex-col items-end text-xs text-gray-600">
+      <span className="whitespace-nowrap text-[11px] text-gray-500">{label}:</span>
+      {isLoading ? (
+        <span className="mt-0.5 flex items-center gap-1 text-gray-500">
+          <SpinnerIcon className="h-3 w-3" />
+          <span className="text-[11px]">Calculating...</span>
+        </span>
+      ) : (
+        <span className="mt-0.5 break-words text-right leading-tight">
+          {value}
+          {symbol}
+        </span>
+      )}
     </div>
   );
 }
