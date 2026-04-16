@@ -4,6 +4,7 @@
   "version": "12.1.1",
   "author": "J M Rossy",
   "dependencies": {
+    "@bigmi/react": "0.7.1",
     "@chakra-ui/next-js": "^2.4.2",
     "@chakra-ui/provider": "^2.4.2",
     "@chakra-ui/react": "^2.10.9",
@@ -25,8 +26,10 @@
     "@hyperlane-xyz/utils": "20.1.0",
     "@hyperlane-xyz/widgets": "20.1.0",
     "@interchain-ui/react": "^1.26.3",
+    "@lifi/widget": "^3.40.12",
     "@metamask/post-message-stream": "6.1.2",
     "@metamask/providers": "10.2.1",
+    "@mysten/dapp-kit": "0.19.11",
     "@radixdlt/babylon-gateway-api-sdk": "^1.10.1",
     "@radixdlt/radix-dapp-toolkit": "^2.3.0",
     "@rainbow-me/rainbowkit": "2.2.0",
@@ -161,7 +164,14 @@
       "cipher-base": "1.0.5",
       "elliptic": "6.6.1",
       "pbkdf2": "3.1.3",
-      "form-data": "4.0.4"
+      "form-data": "4.0.4",
+      "@mysten/dapp-kit": "0.19.11",
+      "@bigmi/react": "0.7.1",
+      "@lifi/widget>zustand": "5.0.12",
+      "@lifi/wallet-management>zustand": "5.0.12",
+      "@bigmi/react>zustand": "5.0.12",
+      "@bigmi/client>zustand": "5.0.12",
+      "@bigmi/core>zustand": "5.0.12"
     },
     "patchedDependencies": {
       "starknetkit@2.6.1": "patches/starknetkit@2.6.1.patch"
