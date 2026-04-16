@@ -8,8 +8,8 @@ import { TransferTokenCard } from '../features/transfer/TransferTokenCard';
 type Tab = 'transfer' | 'bridgeSwap';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'transfer', label: 'Transfer' },
-  { id: 'bridgeSwap', label: 'Bridge & Swap' },
+  { id: 'transfer', label: 'Pruv Bridge' },
+  { id: 'bridgeSwap', label: 'Other Bridge' },
 ];
 
 const Home: NextPage = () => {
