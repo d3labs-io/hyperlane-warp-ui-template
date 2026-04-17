@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { Card } from '../../components/layout/Card';
+import { ErrorBoundary } from '../../components/errors/ErrorBoundary';
 import type { AggregatorMode } from './BridgeSwapWidget';
 
 const STORAGE_KEY = 'bridge-swap.aggregator';
@@ -11,13 +12,32 @@ const BridgeSwapWidget = dynamic(
   { ssr: false },
 );
 
+function isAggregatorMode(value: unknown): value is AggregatorMode {
+  return value === 'jumper' || value === 'lifi';
+}
+
+function readStoredMode(): AggregatorMode | null {
+  try {
+    const value = window.localStorage.getItem(STORAGE_KEY);
+    return isAggregatorMode(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredMode(mode: AggregatorMode) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, mode);
+  } catch {
+    // Safari private mode, disabled storage, quota exceeded — ignore.
+  }
+}
+
 function readInitialMode(): AggregatorMode {
   if (typeof window === 'undefined') return 'jumper';
   const fromUrl = new URLSearchParams(window.location.search).get('aggregator');
-  if (fromUrl === 'jumper' || fromUrl === 'lifi') return fromUrl;
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === 'jumper' || stored === 'lifi') return stored;
-  return 'jumper';
+  if (isAggregatorMode(fromUrl)) return fromUrl;
+  return readStoredMode() ?? 'jumper';
 }
 
 export function BridgeSwapCard() {
@@ -29,7 +49,7 @@ export function BridgeSwapCard() {
 
   const updateMode = (next: AggregatorMode) => {
     setMode(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
+    writeStoredMode(next);
   };
 
   return (
@@ -48,7 +68,9 @@ export function BridgeSwapCard() {
           <option value="lifi">LI.FI direct (0.25% fee)</option>
         </select>
       </div>
-      <BridgeSwapWidget mode={mode} />
+      <ErrorBoundary>
+        <BridgeSwapWidget mode={mode} />
+      </ErrorBoundary>
     </Card>
   );
 }
