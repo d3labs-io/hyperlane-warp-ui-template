@@ -107,29 +107,6 @@ export function BridgeSwapCard() {
           onAccept={acceptDisclaimer}
         />
       )}
-      <p className="mt-3 px-1 text-xxs leading-snug text-gray-500">
-        Bridging and swapping is powered by{' '}
-        <a
-          href="https://li.fi"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-gray-700"
-        >
-          LI.FI
-        </a>
-        , a third-party service. Pruv does not operate this service and is not liable for any
-        failed transactions, loss of funds, slippage, or other damages arising from its use. By
-        using this feature you agree to LI.FI&apos;s{' '}
-        <a
-          href="https://li.fi/legal/terms-and-conditions/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-gray-700"
-        >
-          terms of service
-        </a>
-        .
-      </p>
     </Card>
   );
 }
