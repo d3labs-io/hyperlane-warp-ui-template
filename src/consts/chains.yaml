@@ -176,6 +176,25 @@ kairos:
   rpcUrls:
     - http: https://public-en-kairos.node.kaia.io
   technicalStack: other
+solanadevnet:
+  chainId: 1399811151
+  domainId: 1399811151
+  name: solanadevnet
+  displayName: Solana Devnet
+  protocol: sealevel
+  isTestnet: true
+  logoURI: /images/chains/solanadevnet/logo.svg
+  mailbox: BvbMJ4cWcdyDkSKRWura7WEb6p3kyRiYRkooWkeCRtxD
+  rpcUrls:
+    - http: https://api.devnet.solana.com
+  nativeToken:
+    name: Solana
+    symbol: SOL
+    decimals: 9
+  blocks:
+    confirmations: 1
+    estimateBlockTime: 0.4
+    reorgPeriod: 0
 avalanchefuji:
   blockExplorers:
     - apiUrl: https://api.routescan.io/v2/network/testnet/evm/43113/etherscan/api
