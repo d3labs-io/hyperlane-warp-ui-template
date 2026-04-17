@@ -2,6 +2,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const JUMPER_UPSTREAM = 'https://api.jumper.xyz/pipeline/v1';
 
+const UPSTREAM_TIMEOUT_MS = 20_000;
+const MAX_REQUEST_BODY_BYTES = 1_000_000;
+const MAX_RESPONSE_BODY_BYTES = 5_000_000;
+
 // Browsers forbid setting Origin / Referer / User-Agent on outbound fetches,
 // but Jumper's edge rate-limits requests that don't look like they came from
 // jumper.xyz. This proxy rewrites those headers server-side.
@@ -21,14 +25,26 @@ const FORWARD_REQUEST_HEADERS = new Set([
   'x-lifi-sdk',
 ]);
 
+// content-length is stripped because Node's fetch auto-decodes gzip/br responses;
+// the upstream value no longer matches the decoded buffer we forward.
+const STRIP_RESPONSE_HEADERS = new Set(['content-encoding', 'transfer-encoding', 'content-length']);
+
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
+class BodyTooLargeError extends Error {}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const pathSegments = Array.isArray(req.query.path) ? req.query.path : [req.query.path ?? ''];
+
+  if (pathSegments.some((s) => s === '..' || s === '.' || s.includes('/'))) {
+    res.status(400).json({ error: 'invalid_path' });
+    return;
+  }
+
   const search = req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
   const upstreamUrl = `${JUMPER_UPSTREAM}/${pathSegments.join('/')}${search}`;
 
@@ -40,29 +56,66 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
-  const body = hasBody ? await readBody(req) : undefined;
+  let body: Buffer | undefined;
+  try {
+    body = hasBody ? await readBody(req, MAX_REQUEST_BODY_BYTES) : undefined;
+  } catch (err) {
+    if (err instanceof BodyTooLargeError) {
+      res.status(413).json({ error: 'request_body_too_large' });
+    } else {
+      res.status(400).json({ error: 'invalid_request_body' });
+    }
+    return;
+  }
 
-  const upstream = await fetch(upstreamUrl, {
-    method: req.method,
-    headers,
-    body,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
-  res.status(upstream.status);
-  upstream.headers.forEach((value, key) => {
-    const lower = key.toLowerCase();
-    if (lower === 'content-encoding' || lower === 'transfer-encoding') return;
-    res.setHeader(key, value);
-  });
+  try {
+    const upstream = await fetch(upstreamUrl, {
+      method: req.method,
+      headers,
+      body,
+      signal: controller.signal,
+    });
 
-  const buf = Buffer.from(await upstream.arrayBuffer());
-  res.send(buf);
+    res.status(upstream.status);
+    upstream.headers.forEach((value, key) => {
+      if (STRIP_RESPONSE_HEADERS.has(key.toLowerCase())) return;
+      res.setHeader(key, value);
+    });
+
+    const arrayBuffer = await upstream.arrayBuffer();
+    if (arrayBuffer.byteLength > MAX_RESPONSE_BODY_BYTES) {
+      res.status(502).json({ error: 'upstream_response_too_large' });
+      return;
+    }
+    res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    if ((err as { name?: string })?.name === 'AbortError') {
+      res.status(504).json({ error: 'upstream_timeout' });
+    } else {
+      res.status(502).json({ error: 'upstream_failed' });
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-function readBody(req: NextApiRequest): Promise<Buffer> {
+function readBody(req: NextApiRequest, limit: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    let received = 0;
+    req.on('data', (chunk: Buffer | string) => {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      received += buf.length;
+      if (received > limit) {
+        reject(new BodyTooLargeError());
+        req.destroy();
+        return;
+      }
+      chunks.push(buf);
+    });
     req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
