@@ -752,9 +752,14 @@ function ReviewDetails({
 
   const isBridgeFeeUSDC = config.enablePruvOriginFeeUSDC && values.origin.startsWith('pruv');
 
-  // For USDC from pruv, include bridge fee in the approval amount check
+  // Check if the collateral token IS the USDC fee token
+  const collateralIsUSDC =
+    originToken?.collateralAddressOrDenom &&
+    eqAddress(originToken.collateralAddressOrDenom, config.pruvUSDCMetadata.address);
+
+  // For USDC from pruv (or tokens whose collateral is USDC), include bridge fee in the approval amount check
   let amountWei = isNft ? amount.toString() : toWei(amount, originToken?.decimals);
-  if (isBridgeFeeUSDC && originTokenSymbol === 'USDC') {
+  if (isBridgeFeeUSDC && (originTokenSymbol === 'USDC' || collateralIsUSDC)) {
     const bridgeFee = config.pruvOriginFeeUSDC[destination];
     const parsedAmount = parseFloat(amount);
     if (bridgeFee && !isNaN(parsedAmount)) {
@@ -770,13 +775,15 @@ function ReviewDetails({
   );
   const { isLoading: isQuoteLoading, fees } = useFeeQuotes(values, true);
 
-  // Check if USDC bridge fee approval is needed (for non-USDC tokens from pruv)
+  // Check if USDC bridge fee approval is needed (for non-USDC tokens from pruv
+  // whose collateral is NOT USDC — i.e. tokens like ETH or KAIA that need a
+  // separate USDC approval for the fee)
   const { isLoading: isUSDCApproveLoading, isUSDCApproveRequired } =
     useIsUSDCBridgeFeeApproveRequired(
       values.origin,
       destination,
       originToken?.addressOrDenom,
-      visible && isBridgeFeeUSDC && originTokenSymbol !== 'USDC',
+      visible && isBridgeFeeUSDC && originTokenSymbol !== 'USDC' && !collateralIsUSDC,
     );
 
   const isLoading = isApproveLoading || isQuoteLoading || isUSDCApproveLoading;
@@ -1050,10 +1057,13 @@ async function validateForm(
                 ];
               }
 
-              // If the token being sent is USDC, ensure the transfer amount + bridge fee
-              // does not exceed available USDC balance. If it does, suggest a maximum
-              // transferable amount.
-              if (token.symbol === 'USDC') {
+              // If the token being sent uses USDC (either symbol=USDC or collateral=USDC),
+              // ensure the transfer amount + bridge fee does not exceed available USDC balance.
+              // If it does, suggest a maximum transferable amount.
+              const tokenCollateralIsUSDC =
+                token.collateralAddressOrDenom &&
+                eqAddress(token.collateralAddressOrDenom, config.pruvUSDCMetadata.address);
+              if (token.symbol === 'USDC' || tokenCollateralIsUSDC) {
                 const parsedInput = new BigNumber(amount || 0);
                 const inputAmountBn = parsedInput.isNaN() ? new BigNumber(0) : parsedInput;
                 const totalCost = inputAmountBn.plus(bridgeFee);

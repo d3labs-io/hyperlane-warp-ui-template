@@ -5,7 +5,7 @@ import {
   WarpCore,
   WarpTxCategory,
 } from '@hyperlane-xyz/sdk';
-import { ProtocolType, toTitleCase, toWei } from '@hyperlane-xyz/utils';
+import { ProtocolType, eqAddress, toTitleCase, toWei } from '@hyperlane-xyz/utils';
 import {
   getAccountAddressForChain,
   useAccounts,
@@ -141,8 +141,20 @@ async function executeTransfer({
     const IS_ORIGIN_DEFAULT =
       config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && originToken.symbol === 'USDC';
 
+    // Check if the collateral token is the same USDC used for bridge fees
+    // (e.g. solUSDC uses USDC as collateral, so fee + transfer share one approval)
+    const collateralIsUSDC =
+      originToken.collateralAddressOrDenom &&
+      eqAddress(originToken.collateralAddressOrDenom, config.pruvUSDCMetadata.address);
+
+    const IS_COLLATERAL_USDC_FEE =
+      config.enablePruvOriginFeeUSDC &&
+      origin.startsWith('pruv') &&
+      !IS_ORIGIN_DEFAULT &&
+      collateralIsUSDC;
+
     const IS_NON_ORIGIN_DEFAULT =
-      config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && originToken.symbol !== 'USDC';
+      config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && originToken.symbol !== 'USDC' && !collateralIsUSDC;
 
     const sender = getAccountAddressForChain(multiProvider, origin, activeAccounts.accounts);
     if (!sender) throw new Error('No active account found for origin chain');
@@ -219,6 +231,48 @@ async function executeTransfer({
         }
       } else if (approvalIndex >= 0) {
         // Remove the SDK-added approval since sufficient allowance exists
+        txs.splice(approvalIndex, 1);
+      }
+    } else if (IS_COLLATERAL_USDC_FEE) {
+      // Collateral IS the USDC fee token (e.g. solUSDC with USDC collateral).
+      // The contract's transferRemote pulls (amount + fee) from sender in USDC,
+      // so we need a single approval for (amount + fee) to the proxy.
+      const bridgeFee = config.pruvOriginFeeUSDC[destination];
+      const totalApprovalAmount = parseFloat(amount) + bridgeFee;
+      const approvalAmountWei = toWei(totalApprovalAmount.toString(), originToken.decimals);
+      const routerAddress = originToken.addressOrDenom;
+
+      const tokenAdapter = new EvmTokenAdapter(origin, multiProvider, {
+        token: originToken.collateralAddressOrDenom || originToken.addressOrDenom,
+      });
+
+      const needsApproval = await tokenAdapter.isApproveRequired(
+        sender,
+        routerAddress,
+        approvalAmountWei,
+      );
+      const approvalIndex = txs.findIndex((tx) => tx.category === WarpTxCategory.Approval);
+
+      if (needsApproval) {
+        const approvalTx = await tokenAdapter.populateApproveTx({
+          weiAmountOrId: approvalAmountWei,
+          recipient: routerAddress,
+        });
+
+        if (approvalIndex >= 0) {
+          txs[approvalIndex] = {
+            ...txs[approvalIndex],
+            transaction: approvalTx,
+          } as any;
+        } else {
+          const approvalTxObj = {
+            category: WarpTxCategory.Approval,
+            type: multiProvider.getProvider(origin).type,
+            transaction: approvalTx,
+          } as any;
+          txs.unshift(approvalTxObj);
+        }
+      } else if (approvalIndex >= 0) {
         txs.splice(approvalIndex, 1);
       }
     } else if (IS_NON_ORIGIN_DEFAULT) {

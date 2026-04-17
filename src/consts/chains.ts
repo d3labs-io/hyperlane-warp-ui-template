@@ -71,6 +71,7 @@ export const chains: ChainMap<ChainMetadata & { mailbox?: Address }> = config.us
 export const chainsRentEstimate: ChainMap<bigint> = {
   eclipsemainnet: BigInt(Math.round(0.00004019 * 10 ** 9)),
   solanamainnet: BigInt(Math.round(0.00411336 * 10 ** 9)),
+  solanadevnet: BigInt(Math.round(0.00203928 * 10 ** 9)),
   sonicsvm: BigInt(Math.round(0.00411336 * 10 ** 9)),
   soon: BigInt(Math.round(0.00000355 * 10 ** 9)),
 };
