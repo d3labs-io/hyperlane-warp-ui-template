@@ -16,17 +16,25 @@ const jumperRequestInterceptor = async (req: RequestInit) => {
   return req;
 };
 
+// The host app mounts its own WagmiProvider with a Hyperlane-derived chain list.
+// Without this flag the widget would piggyback on that context and fail
+// `switchChain` with "Chain not configured" for any route outside the host's
+// chains. Forcing internal management makes the widget self-contained with the
+// full LI.FI chain catalog; users connect a wallet inside the widget itself.
+const walletConfig = { forceInternalWalletManagement: true };
+
 function buildConfig(mode: AggregatorMode): WidgetConfig {
   if (mode === 'jumper') {
     return {
       integrator: 'jumper.exchange',
+      walletConfig,
       sdkConfig: {
         apiUrl: JUMPER_PROXY_URL,
         requestInterceptor: jumperRequestInterceptor,
       },
     };
   }
-  return { integrator: LIFI_INTEGRATOR };
+  return { integrator: LIFI_INTEGRATOR, walletConfig };
 }
 
 export function BridgeSwapWidget({ mode }: { mode: AggregatorMode }) {
