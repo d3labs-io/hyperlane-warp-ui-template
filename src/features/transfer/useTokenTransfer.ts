@@ -154,7 +154,10 @@ async function executeTransfer({
       collateralIsUSDC;
 
     const IS_NON_ORIGIN_DEFAULT =
-      config.enablePruvOriginFeeUSDC && origin.startsWith('pruv') && originToken.symbol !== 'USDC' && !collateralIsUSDC;
+      config.enablePruvOriginFeeUSDC &&
+      origin.startsWith('pruv') &&
+      originToken.symbol !== 'USDC' &&
+      !collateralIsUSDC;
 
     const sender = getAccountAddressForChain(multiProvider, origin, activeAccounts.accounts);
     if (!sender) throw new Error('No active account found for origin chain');
