@@ -263,28 +263,28 @@ tokens:
     connections:
       - token: ethereum|pruvtest|0x6a7ac9211E92cF0c4481BC606666b30B2d110592
   ## KAI
-  ## USDC Solana Devnet
-  - chainName: pruvtest
-    standard: EvmHypCollateral
-    decimals: 6
-    symbol: USDC
-    name: USD Coin (Solana)
-    addressOrDenom: '0x1898EA05B86Bc94d12059DB1f7AC9Ba7dd4faA85'
-    collateralAddressOrDenom: '0xF25A5D76030e62aCAfe5E02039e45aB82bB82f4E'
-    connections:
-      - token: sealevel|solanadevnet|8U839tAqaffuBE3hvSjA8xfQXvTUDSCi2K8tHnYrKBMD
-    logoURI: /images/tokens/USDC/logo.svg
+  ## official solana devnet USDC
   - chainName: solanadevnet
-    standard: SealevelHypSynthetic
+    standard: SealevelHypCollateral
     decimals: 6
     symbol: USDC
-    name: USD Coin (Solana)
-    addressOrDenom: '8U839tAqaffuBE3hvSjA8xfQXvTUDSCi2K8tHnYrKBMD'
-    collateralAddressOrDenom: 'Hazas9HA1LsMqXcwnHhF7pxidfUp7ohFMevqeQJwAMhG'
+    name: USD Coin
+    addressOrDenom: '4MX8LcKbg623CFgjiQn8WghxU7KeF6cewGkrZfeomwAG'
+    collateralAddressOrDenom: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
     connections:
-      - token: ethereum|pruvtest|0x1898EA05B86Bc94d12059DB1f7AC9Ba7dd4faA85
+      - token: ethereum|pruvtest|0x3e060baf220d3623666649d0c6dff2cb7438e23d
     logoURI: /images/tokens/USDC/logo.svg
-  ## USDC Solana Devnet
+  - chainName: pruvtest
+    standard: EvmHypCollateralFiat
+    decimals: 6
+    symbol: USDC
+    name: USD Coin
+    addressOrDenom: '0x3e060baf220d3623666649d0c6dff2cb7438e23d'
+    collateralAddressOrDenom: '0xeCacC484026a02022565496E088CA0581cC36373'
+    connections:
+      - token: sealevel|solanadevnet|4MX8LcKbg623CFgjiQn8WghxU7KeF6cewGkrZfeomwAG
+    logoURI: /images/tokens/USDC/logo.svg
+  ## official solana devnet USDC
   ## wSOL - SOL Native (Solana Devnet)
   - chainName: solanadevnet
     standard: SealevelHypNative
@@ -305,28 +305,28 @@ tokens:
       - token: sealevel|solanadevnet|2Hu1vLL7jFBnjAG6EZt5L6tjJEhcadtJZ5rThvxXjNo4
     logoURI: /images/tokens/SOL/logo.svg
   ## wSOL - SOL Native (Solana Devnet)
-  ## solUSDC - Solana-origin USDC (with on-chain fee via HypFiatTokenWithFee)
-  - chainName: solanadevnet
-    standard: SealevelHypCollateral
-    decimals: 6
-    symbol: solUSDC
-    name: Solana USDC
-    addressOrDenom: '4MX8LcKbg623CFgjiQn8WghxU7KeF6cewGkrZfeomwAG'
-    collateralAddressOrDenom: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
-    connections:
-      - token: ethereum|pruvtest|0x3e060baf220d3623666649d0c6dff2cb7438e23d
-    logoURI: /images/tokens/USDC/logo.svg
-  - chainName: pruvtest
-    standard: EvmHypCollateralFiat
-    decimals: 6
-    symbol: solUSDC
-    name: Solana USDC
-    addressOrDenom: '0x3e060baf220d3623666649d0c6dff2cb7438e23d'
-    collateralAddressOrDenom: '0xeCacC484026a02022565496E088CA0581cC36373'
-    connections:
-      - token: sealevel|solanadevnet|4MX8LcKbg623CFgjiQn8WghxU7KeF6cewGkrZfeomwAG
-    logoURI: /images/tokens/USDC/logo.svg
-  ## solUSDC - Solana-origin USDC (with on-chain fee via HypFiatTokenWithFee)
+#  ## non official USDC Solana Devnet
+#  - chainName: pruvtest
+#    standard: EvmHypCollateral
+#    decimals: 6
+#    symbol: synthUSDC
+#    name: Synthetic USDC (Solana)
+#    addressOrDenom: '0x1898EA05B86Bc94d12059DB1f7AC9Ba7dd4faA85'
+#    collateralAddressOrDenom: '0xF25A5D76030e62aCAfe5E02039e45aB82bB82f4E'
+#    connections:
+#      - token: sealevel|solanadevnet|8U839tAqaffuBE3hvSjA8xfQXvTUDSCi2K8tHnYrKBMD
+#    logoURI: /images/tokens/USDC/logo.svg
+#  - chainName: solanadevnet
+#    standard: SealevelHypSynthetic
+#    decimals: 6
+#    symbol: synthUSDC
+#    name: Synthetic USDC (Solana)
+#    addressOrDenom: '8U839tAqaffuBE3hvSjA8xfQXvTUDSCi2K8tHnYrKBMD'
+#    collateralAddressOrDenom: 'Hazas9HA1LsMqXcwnHhF7pxidfUp7ohFMevqeQJwAMhG'
+#    connections:
+#      - token: ethereum|pruvtest|0x1898EA05B86Bc94d12059DB1f7AC9Ba7dd4faA85
+#    logoURI: /images/tokens/USDC/logo.svg
+#  ## non official USDC Solana Devnet
 
 # STAGING #
 options: {}
