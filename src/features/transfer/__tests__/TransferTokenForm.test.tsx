@@ -1,4 +1,5 @@
-import type { Token, WarpCore } from '@hyperlane-xyz/sdk';
+import { TokenAmount } from '@hyperlane-xyz/sdk';
+import type { IToken, Token, WarpCore } from '@hyperlane-xyz/sdk';
 import { getAccountAddressAndPubKey } from '@hyperlane-xyz/widgets';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -165,6 +166,59 @@ describe('TransferTokenForm testables', () => {
       expect(errors).toBeNull();
       expect(overrideToken).toBeNull();
       expect(isMultiCollateralLimitExceeded).toHaveBeenCalled();
+    });
+  });
+
+  describe('formatFeePreview', () => {
+    const usdcToken = {
+      chainName: 'solanadevnet',
+      decimals: 6,
+      symbol: 'USDC',
+      isFungibleWith: vi.fn(() => false),
+    } as unknown as IToken;
+
+    const multiProvider = {
+      getChainMetadata: vi.fn(() => ({
+        name: 'solanadevnet',
+        nativeToken: { name: 'Solana', symbol: 'SOL', decimals: 9 },
+      })),
+    } as unknown as WarpCore['multiProvider'];
+
+    it('keeps Solana rent in native units instead of adding it to USDC fees', () => {
+      const feePreview = __testables.formatFeePreview(
+        multiProvider,
+        usdcToken as unknown as Token,
+        {
+          interchainQuote: new TokenAmount(0n, usdcToken),
+          localQuote: new TokenAmount(0n, usdcToken),
+        },
+      );
+
+      expect(feePreview?.interchainQuote.getDecimalFormattedAmount().toString()).toBe('0');
+      expect(feePreview?.svmRentQuote?.token.symbol).toBe('SOL');
+      expect(feePreview?.svmRentQuote?.getDecimalFormattedAmount().toString()).toBe('0.00203928');
+      expect(feePreview?.totalFees).toBe('0.0020 SOL');
+    });
+
+    it('does not add rent for non-SVM origins', () => {
+      const evmToken = {
+        chainName: 'pruvtest',
+        decimals: 6,
+        symbol: 'USDC',
+        isFungibleWith: vi.fn(() => false),
+      } as unknown as IToken;
+
+      const feePreview = __testables.formatFeePreview(
+        multiProvider,
+        evmToken as unknown as Token,
+        {
+          interchainQuote: new TokenAmount(1000000n, evmToken),
+          localQuote: new TokenAmount(0n, evmToken),
+        },
+      );
+
+      expect(feePreview?.svmRentQuote).toBeNull();
+      expect(feePreview?.totalFees).toBe('1.0000 USDC');
     });
   });
 });
