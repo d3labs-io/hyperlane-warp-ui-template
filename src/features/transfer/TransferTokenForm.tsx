@@ -1,4 +1,4 @@
-import { IToken, Token, TokenAmount, WarpCore } from '@hyperlane-xyz/sdk';
+import { IToken, MultiProtocolProvider, Token, TokenAmount, WarpCore } from '@hyperlane-xyz/sdk';
 import {
   ProtocolType,
   convertToScaledAmount,
@@ -703,8 +703,8 @@ function FeePreviewSection({
 
   const { isLoading: isQuoteLoading, fees } = useFeeQuotes(values, hasRequiredInputs);
   const feePreview = useMemo(
-    () => formatFeePreview(originToken, fees ?? null),
-    [originToken, fees],
+    () => formatFeePreview(warpCore.multiProvider, originToken, fees ?? null),
+    [warpCore.multiProvider, originToken, fees],
   );
 
   if (!hasRequiredInputs) return null;
@@ -793,8 +793,8 @@ function ReviewDetails({
   const receivedAmount = amount;
 
   const feePreview = useMemo(
-    () => formatFeePreview(originToken, fees ?? null),
-    [originToken, fees],
+    () => formatFeePreview(warpCore.multiProvider, originToken, fees ?? null),
+    [warpCore.multiProvider, originToken, fees],
   );
   const interchainQuote = feePreview?.interchainQuote;
 
@@ -870,6 +870,14 @@ function ReviewDetails({
                       }`}</span>
                     </p>
                   )}
+                {feePreview?.svmRentQuote && feePreview.svmRentQuote.amount > 0n && (
+                  <p className="flex">
+                    <span className="min-w-[7.5rem]">Origin Rent</span>
+                    <span>{`${feePreview.svmRentQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
+                      feePreview.svmRentQuote.token.symbol || ''
+                    }`}</span>
+                  </p>
+                )}
                 {isBridgeFeeUSDC && (
                   <p className="flex">
                     <span className="min-w-[7.5rem]">Bridge Fee (USDC)</span>
@@ -944,17 +952,15 @@ function useFormInitialValues(): TransferFormValues {
 }
 
 function formatFeePreview(
+  multiProvider: MultiProtocolProvider,
   originToken: Token | null | undefined,
   feeQuotes: { interchainQuote: TokenAmount; localQuote: TokenAmount } | null,
 ) {
   if (!feeQuotes) return null;
 
-  const interchainQuoteWithRent =
-    originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
-      ? feeQuotes.interchainQuote.plus(chainsRentEstimate[originToken.chainName])
-      : feeQuotes.interchainQuote;
+  const svmRentQuote = getSvmRentQuote(multiProvider, originToken);
 
-  const amountsToGroup = [interchainQuoteWithRent, feeQuotes.localQuote].filter(
+  const amountsToGroup = [feeQuotes.interchainQuote, feeQuotes.localQuote, svmRentQuote].filter(
     (amount) => amount && amount.amount > 0n,
   ) as TokenAmount[];
 
@@ -984,9 +990,25 @@ function formatFeePreview(
 
   return {
     ...feeQuotes,
-    interchainQuote: interchainQuoteWithRent,
+    svmRentQuote,
     totalFees,
   };
+}
+
+function getSvmRentQuote(
+  multiProvider: MultiProtocolProvider,
+  originToken: Token | null | undefined,
+): TokenAmount | null {
+  if (!originToken || !objKeys(chainsRentEstimate).includes(originToken.chainName)) return null;
+
+  try {
+    const chainMetadata = multiProvider.getChainMetadata(originToken.chainName);
+    const nativeToken = Token.FromChainMetadataNativeToken(chainMetadata);
+    return nativeToken.amount(chainsRentEstimate[originToken.chainName]);
+  } catch (error) {
+    logger.warn('Failed to create SVM rent quote', error);
+    return null;
+  }
 }
 
 const insufficientFundsErrMsg = /insufficient.[funds|lamports]/i;
@@ -1202,4 +1224,6 @@ export const __testables = {
   useFormInitialValues,
   validateForm,
   getTransferToken,
+  formatFeePreview,
+  getSvmRentQuote,
 };

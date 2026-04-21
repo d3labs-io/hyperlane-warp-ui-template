@@ -1,5 +1,10 @@
-import { WarpCoreFeeEstimate } from '@hyperlane-xyz/sdk';
+import { TokenAmount, WarpCoreFeeEstimate } from '@hyperlane-xyz/sdk';
 import { Modal, Skeleton, Tooltip } from '@hyperlane-xyz/widgets';
+
+export type FeePreview = WarpCoreFeeEstimate & {
+  svmRentQuote?: TokenAmount | null;
+  totalFees: string;
+};
 
 export function TransferFeeModal({
   isOpen,
@@ -9,7 +14,7 @@ export function TransferFeeModal({
 }: {
   isOpen: boolean;
   close: () => void;
-  fees: WarpCoreFeeEstimate | null;
+  fees: FeePreview | null;
   isLoading: boolean;
 }) {
   return (
@@ -55,6 +60,25 @@ export function TransferFeeModal({
             ) : (
               <span>{`${fees.interchainQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
                 fees.interchainQuote.token.symbol || ''
+              }`}</span>
+            )}
+          </div>
+        )}
+        {fees?.svmRentQuote && fees.svmRentQuote.amount > 0n && (
+          <div className="flex gap-4">
+            <span className="flex min-w-[7.5rem] items-center gap-1">
+              Origin Rent
+              <Tooltip
+                content="Estimated rent to create required accounts on the origin SVM chain"
+                id="origin-rent-tooltip"
+                tooltipClassName="max-w-[300px]"
+              />
+            </span>
+            {isLoading ? (
+              <Skeleton className="h-4 w-52" />
+            ) : (
+              <span>{`${fees.svmRentQuote.getDecimalFormattedAmount().toFixed(4) || '0'} ${
+                fees.svmRentQuote.token.symbol || ''
               }`}</span>
             )}
           </div>

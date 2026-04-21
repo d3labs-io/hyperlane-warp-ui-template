@@ -1,7 +1,6 @@
-import { WarpCoreFeeEstimate } from '@hyperlane-xyz/sdk';
 import { ChevronIcon, FuelPumpIcon, Skeleton, useModal } from '@hyperlane-xyz/widgets';
 import { Color } from '../../styles/Color';
-import { TransferFeeModal } from './TransferFeeModal';
+import { FeePreview, TransferFeeModal } from './TransferFeeModal';
 
 export function FeeSectionButton({
   isLoading,
@@ -9,7 +8,7 @@ export function FeeSectionButton({
   visible,
 }: {
   isLoading: boolean;
-  fees: (WarpCoreFeeEstimate & { totalFees: string }) | null;
+  fees: FeePreview | null;
   visible: boolean;
 }) {
   const { close, isOpen, open } = useModal();
