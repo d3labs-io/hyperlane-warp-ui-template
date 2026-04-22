@@ -1,5 +1,5 @@
-import { TokenAmount } from '@hyperlane-xyz/sdk';
 import type { IToken, Token, WarpCore } from '@hyperlane-xyz/sdk';
+import { TokenAmount } from '@hyperlane-xyz/sdk';
 import { getAccountAddressAndPubKey } from '@hyperlane-xyz/widgets';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
