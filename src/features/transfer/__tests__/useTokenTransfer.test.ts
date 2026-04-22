@@ -149,8 +149,8 @@ vi.mock('../../chains/utils', () => ({
 }));
 
 vi.mock('../../chains/rpcUtils', () => ({
-  ensureWalletOnChain: vi.fn(() => Promise.resolve()),
-  preEstimateGasForEvmTxs: vi.fn(),
+  ensureWalletOnChain: mockEnsureWalletOnChain,
+  preEstimateGasForEvmTxs: mockPreEstimateGasForEvmTxs,
 }));
 
 vi.mock('../../chains/safeWalletUtils', () => ({
@@ -208,11 +208,6 @@ vi.mock('wagmi', () => ({
 
 vi.mock('@wagmi/core', () => ({
   getPublicClient: () => undefined,
-}));
-
-vi.mock('../../chains/rpcUtils', () => ({
-  ensureWalletOnChain: (...args: any[]) => mockEnsureWalletOnChain(...args),
-  preEstimateGasForEvmTxs: (...args: any[]) => mockPreEstimateGasForEvmTxs(...args),
 }));
 
 describe('useTokenTransfer', () => {
