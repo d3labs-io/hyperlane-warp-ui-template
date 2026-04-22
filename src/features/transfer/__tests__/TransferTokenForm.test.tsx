@@ -1,5 +1,5 @@
-import { TokenAmount } from '@hyperlane-xyz/sdk';
 import type { IToken, Token, WarpCore } from '@hyperlane-xyz/sdk';
+import { TokenAmount } from '@hyperlane-xyz/sdk';
 import { getAccountAddressAndPubKey } from '@hyperlane-xyz/widgets';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -208,14 +208,10 @@ describe('TransferTokenForm testables', () => {
         isFungibleWith: vi.fn(() => false),
       } as unknown as IToken;
 
-      const feePreview = __testables.formatFeePreview(
-        multiProvider,
-        evmToken as unknown as Token,
-        {
-          interchainQuote: new TokenAmount(1000000n, evmToken),
-          localQuote: new TokenAmount(0n, evmToken),
-        },
-      );
+      const feePreview = __testables.formatFeePreview(multiProvider, evmToken as unknown as Token, {
+        interchainQuote: new TokenAmount(1000000n, evmToken),
+        localQuote: new TokenAmount(0n, evmToken),
+      });
 
       expect(feePreview?.svmRentQuote).toBeNull();
       expect(feePreview?.totalFees).toBe('1.0000 USDC');
