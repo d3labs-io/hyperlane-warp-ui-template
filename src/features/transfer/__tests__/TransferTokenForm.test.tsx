@@ -1,4 +1,5 @@
-import type { Token, WarpCore } from '@hyperlane-xyz/sdk';
+import type { IToken, Token, WarpCore } from '@hyperlane-xyz/sdk';
+import { TokenAmount } from '@hyperlane-xyz/sdk';
 import { getAccountAddressAndPubKey } from '@hyperlane-xyz/widgets';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -165,6 +166,51 @@ describe('TransferTokenForm testables', () => {
       expect(errors).toBeNull();
       expect(overrideToken).toBeNull();
       expect(isMultiCollateralLimitExceeded).toHaveBeenCalled();
+    });
+  });
+
+  describe('formatFeePreview', () => {
+    const usdcToken = {
+      chainName: 'solanadevnet',
+      decimals: 6,
+      symbol: 'USDC',
+      isFungibleWith: vi.fn(() => false),
+    } as unknown as IToken;
+
+    const solToken = {
+      chainName: 'solanadevnet',
+      decimals: 9,
+      symbol: 'SOL',
+      isFungibleWith: vi.fn((other: { symbol?: string }) => other?.symbol === 'SOL'),
+    } as unknown as IToken;
+
+    it('adds SVM rent to the local native fee instead of the interchain quote', () => {
+      const feePreview = __testables.formatFeePreview(usdcToken as unknown as Token, {
+        interchainQuote: new TokenAmount(0n, usdcToken),
+        localQuote: new TokenAmount(0n, solToken),
+      });
+
+      expect(feePreview?.interchainQuote.getDecimalFormattedAmount().toString()).toBe('0');
+      expect(feePreview?.localQuote.token.symbol).toBe('SOL');
+      expect(feePreview?.localQuote.getDecimalFormattedAmount().toString()).toBe('0.00203928');
+      expect(feePreview?.totalFees).toBe('0.0020 SOL');
+    });
+
+    it('does not add rent for non-SVM origins', () => {
+      const evmToken = {
+        chainName: 'ethereum',
+        decimals: 6,
+        symbol: 'USDC',
+        isFungibleWith: vi.fn(() => false),
+      } as unknown as IToken;
+
+      const feePreview = __testables.formatFeePreview(evmToken as unknown as Token, {
+        interchainQuote: new TokenAmount(1_000_000n, evmToken),
+        localQuote: new TokenAmount(0n, evmToken),
+      });
+
+      expect(feePreview?.localQuote.getDecimalFormattedAmount().toString()).toBe('0');
+      expect(feePreview?.totalFees).toBe('1.0000 USDC');
     });
   });
 });
