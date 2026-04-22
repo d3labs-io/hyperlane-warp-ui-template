@@ -949,12 +949,12 @@ function formatFeePreview(
 ) {
   if (!feeQuotes) return null;
 
-  const interchainQuoteWithRent =
+  const localQuoteWithRent =
     originToken && objKeys(chainsRentEstimate).includes(originToken.chainName)
-      ? feeQuotes.interchainQuote.plus(chainsRentEstimate[originToken.chainName])
-      : feeQuotes.interchainQuote;
+      ? feeQuotes.localQuote.plus(chainsRentEstimate[originToken.chainName])
+      : feeQuotes.localQuote;
 
-  const amountsToGroup = [interchainQuoteWithRent, feeQuotes.localQuote].filter(
+  const amountsToGroup = [feeQuotes.interchainQuote, localQuoteWithRent].filter(
     (amount) => amount && amount.amount > 0n,
   ) as TokenAmount[];
 
@@ -984,7 +984,7 @@ function formatFeePreview(
 
   return {
     ...feeQuotes,
-    interchainQuote: interchainQuoteWithRent,
+    localQuote: localQuoteWithRent,
     totalFees,
   };
 }
@@ -1202,4 +1202,5 @@ export const __testables = {
   useFormInitialValues,
   validateForm,
   getTransferToken,
+  formatFeePreview,
 };
