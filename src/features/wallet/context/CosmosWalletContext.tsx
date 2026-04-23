@@ -8,7 +8,7 @@ import { cosmoshub } from '@hyperlane-xyz/registry';
 import { MultiProtocolProvider } from '@hyperlane-xyz/sdk';
 import { getCosmosKitChainConfigs } from '@hyperlane-xyz/widgets';
 import '@interchain-ui/react/styles';
-import { PropsWithChildren, useMemo } from 'react';
+import { ComponentProps, PropsWithChildren, useMemo } from 'react';
 import { APP_DESCRIPTION, APP_NAME, APP_URL } from '../../../consts/app';
 import { config } from '../../../consts/config';
 import { useMultiProvider } from '../../chains/hooks';
@@ -27,12 +27,28 @@ export function CosmosWalletContext({ children }: PropsWithChildren<unknown>) {
     return getCosmosKitChainConfigs(multiProvider);
   }, [chainMetadata]);
   const leapWithoutSnap = leapWallets.filter((wallet) => !wallet.walletName.includes('snap'));
+  const chainProviderChains = chains as ComponentProps<typeof ChainProvider>['chains'];
+  const signerOptions = {
+    signingCosmwasm: () => {
+      return {
+        // TODO cosmos get gas price from registry or RPC
+        gasPrice: GasPrice.fromString('0.03token'),
+      };
+    },
+    signingStargate: () => {
+      return {
+        // TODO cosmos get gas price from registry or RPC
+        gasPrice: GasPrice.fromString('0.2tia'),
+      };
+    },
+  } as unknown as ComponentProps<typeof ChainProvider>['signerOptions'];
+
   // TODO replace Chakra here with a custom modal for ChainProvider
   // Using Chakra + @cosmos-kit/react instead of @cosmos-kit/react-lite adds about 600Kb to the bundle
   return (
     <ChakraProvider theme={theme}>
       <ChainProvider
-        chains={chains}
+        chains={chainProviderChains}
         assetLists={assets}
         wallets={[...keplrWallets, ...cosmostationWallets, ...leapWithoutSnap]}
         walletConnectOptions={{
@@ -46,20 +62,7 @@ export function CosmosWalletContext({ children }: PropsWithChildren<unknown>) {
             },
           },
         }}
-        signerOptions={{
-          signingCosmwasm: () => {
-            return {
-              // TODO cosmos get gas price from registry or RPC
-              gasPrice: GasPrice.fromString('0.03token'),
-            };
-          },
-          signingStargate: () => {
-            return {
-              // TODO cosmos get gas price from registry or RPC
-              gasPrice: GasPrice.fromString('0.2tia'),
-            };
-          },
-        }}
+        signerOptions={signerOptions}
         modalTheme={{ defaultTheme: 'light' }}
       >
         {children}
