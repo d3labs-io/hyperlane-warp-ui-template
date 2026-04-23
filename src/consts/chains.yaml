@@ -177,6 +177,11 @@ kairos:
     - http: https://public-en-kairos.node.kaia.io
   technicalStack: other
 solanadevnet:
+  blockExplorers:
+    - name: Solana Explorer
+      url: https://explorer.solana.com?cluster=devnet
+      apiUrl: https://explorer.solana.com?cluster=devnet
+      family: other
   chainId: 1399811151
   domainId: 1399811151
   name: solanadevnet
