@@ -47,6 +47,7 @@ tokens:
     connections:
       - token: ethereum|bsc|0xeCFF040e761159f18Bc171C9F05FCCd4d76Aa588
       - token: ethereum|kaia|0x49D12edcDb5E35F90dc0F8f469e73Eef3a65Be86
+      - token: ethereum|avalanche|0xB9902183e32157c00AA48Ba492AdEEeb970C7514
     logoURI: /images/tokens/USDT/logo.svg
   - chainName: bsc
     standard: EvmHypCollateral
@@ -65,6 +66,16 @@ tokens:
     name: Tether USD
     addressOrDenom: '0x49D12edcDb5E35F90dc0F8f469e73Eef3a65Be86'
     collateralAddressOrDenom: '0xd077a400968890eacc75cdc901f0356c943e4fdb'
+    connections:
+      - token: ethereum|pruv|0xF8158CC824E5794fc35e31D777476e98b51498C0
+    logoURI: /images/tokens/USDT/logo.svg
+  - chainName: avalanche
+    standard: EvmHypCollateral
+    decimals: 6
+    symbol: USDT
+    name: TetherToken
+    addressOrDenom: '0xB9902183e32157c00AA48Ba492AdEEeb970C7514'
+    collateralAddressOrDenom: '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7'
     connections:
       - token: ethereum|pruv|0xF8158CC824E5794fc35e31D777476e98b51498C0
     logoURI: /images/tokens/USDT/logo.svg

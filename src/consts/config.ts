@@ -77,6 +77,7 @@ export const config: Config = Object.freeze({
     mantapacific: 0.1,
     bsc: 0.1,
     kaia: 0.1,
+    avalanche: 0.1,
   },
   pruvUSDCMetadata: {
     address: '0xae2205D95520A80D0B380678b6BECf0566457B7E',
